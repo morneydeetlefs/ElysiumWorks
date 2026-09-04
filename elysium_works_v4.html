@@ -1,0 +1,711 @@
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400&family=Outfit:wght@300;400;500;600&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --brand: #3A6B4F;
+    --brand-light: #EAF2EC;
+    --brand-mid: #4E8C68;
+    --brand-dark: #264736;
+    --warm: #F8F6F1;
+    --card: #FFFFFF;
+    --accent: #C2601A;
+    --accent-light: #FDF0E4;
+    --text-dark: #1A1A18;
+    --text-mid: #4A4845;
+    --text-soft: #6A6760;
+    --border-col: #E6E2DA;
+    --serif: 'Fraunces', Georgia, serif;
+    --sans: 'Outfit', system-ui, sans-serif;
+  }
+  body { font-family: var(--sans); background: var(--warm); color: var(--text-dark); overflow-x: hidden; }
+
+  nav {
+    background: var(--brand-dark); padding: 0 1.5rem;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 58px; position: sticky; top: 0; z-index: 100;
+  }
+  .nav-brand { font-family: var(--serif); font-size: 19px; color: #fff; font-weight: 600; letter-spacing: -0.01em; }
+  .nav-brand span { color: #A8D4B8; font-style: italic; }
+  .nav-links { display: flex; gap: 4px; }
+  .nav-link {
+    font-size: 13px; padding: 6px 11px; border-radius: 6px;
+    color: rgba(255,255,255,0.7); cursor: pointer; border: none;
+    background: none; font-family: var(--sans); font-weight: 400; transition: all 0.18s;
+  }
+  .nav-link:hover { color: #fff; background: rgba(255,255,255,0.1); }
+  .nav-cta {
+    background: var(--accent); color: #fff; padding: 7px 16px;
+    border-radius: 7px; font-size: 13px; font-weight: 600;
+    border: none; font-family: var(--sans); cursor: pointer; transition: opacity 0.2s;
+  }
+  .nav-cta:hover { opacity: 0.88; }
+
+  .hero {
+    background: var(--brand-dark); padding: 3.5rem 1.5rem 3rem;
+    text-align: center; position: relative;
+  }
+  .hero::after {
+    content: ''; position: absolute; bottom: 0; left: 0; right: 0;
+    height: 40px; background: var(--warm);
+    clip-path: ellipse(55% 100% at 50% 100%);
+  }
+  .hero-location {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(168,212,184,0.15); border: 1px solid rgba(168,212,184,0.3);
+    border-radius: 20px; padding: 5px 14px; font-size: 12px;
+    color: #A8D4B8; margin-bottom: 1.5rem; font-weight: 500;
+  }
+  .hero h1 {
+    font-family: var(--serif); font-size: clamp(30px, 5.5vw, 52px);
+    color: #fff; font-weight: 600; line-height: 1.15;
+    max-width: 620px; margin: 0 auto 1rem; letter-spacing: -0.02em;
+  }
+  .hero h1 em { color: #A8D4B8; font-style: italic; }
+  .hero p {
+    font-size: 15px; color: rgba(255,255,255,0.65);
+    max-width: 460px; margin: 0 auto 2rem; line-height: 1.7; font-weight: 300;
+  }
+  .hero-btns { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  .btn-primary {
+    background: var(--accent); color: #fff; border: none;
+    padding: 12px 24px; border-radius: 9px; font-size: 14px;
+    font-weight: 600; font-family: var(--sans); cursor: pointer; transition: opacity 0.2s, transform 0.15s;
+  }
+  .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+  .btn-ghost {
+    background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.85);
+    border: 1px solid rgba(255,255,255,0.25); padding: 12px 24px;
+    border-radius: 9px; font-size: 14px; font-weight: 500;
+    font-family: var(--sans); cursor: pointer; transition: background 0.2s;
+  }
+  .btn-ghost:hover { background: rgba(255,255,255,0.18); }
+  .hero-chips {
+    display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;
+    margin-top: 2.5rem; padding-top: 1.75rem; border-top: 1px solid rgba(255,255,255,0.1);
+  }
+  .chip {
+    background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 20px; padding: 4px 12px; font-size: 12px;
+    color: rgba(255,255,255,0.75); display: flex; align-items: center; gap: 5px;
+  }
+
+  .tabs-wrap { background: #fff; border-bottom: 1px solid var(--border-col); }
+  .tabs-inner { max-width: 860px; margin: 0 auto; padding: 0 1.5rem; }
+  .tab-bar { display: flex; overflow-x: auto; border-bottom: 2px solid var(--border-col); gap: 0; }
+  .tab-btn {
+    padding: 0.9rem 1.1rem; font-size: 13px; font-weight: 500;
+    color: var(--text-soft); border: none; background: none;
+    font-family: var(--sans); cursor: pointer;
+    border-bottom: 2px solid transparent; margin-bottom: -2px;
+    white-space: nowrap; transition: all 0.18s; display: flex; align-items: center; gap: 5px;
+  }
+  .tab-btn.active { color: var(--brand); border-bottom-color: var(--brand); }
+  .tab-btn:hover:not(.active) { color: var(--text-dark); }
+  .tab-content { display: none; padding: 1.75rem 0 2rem; }
+  .tab-content.active { display: block; }
+  .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
+  .svc-card {
+    border: 1px solid var(--border-col); border-radius: 12px;
+    padding: 1.25rem; background: var(--warm); transition: box-shadow 0.2s, transform 0.18s;
+  }
+  .svc-card:hover { box-shadow: 0 5px 18px rgba(0,0,0,0.07); transform: translateY(-2px); }
+  .svc-icon {
+    width: 38px; height: 38px; border-radius: 8px; background: var(--brand-light);
+    display: flex; align-items: center; justify-content: center; margin-bottom: 0.8rem;
+  }
+  .svc-icon i { font-size: 19px; color: var(--brand); }
+  .svc-icon.org { background: var(--accent-light); }
+  .svc-icon.org i { color: var(--accent); }
+  .svc-card h3 { font-size: 14px; font-weight: 600; margin-bottom: 0.35rem; }
+  .svc-card p { font-size: 13px; color: var(--text-mid); line-height: 1.6; margin-bottom: 0.7rem; }
+
+  /* FIXED: price notes now use --text-mid (#4A4845) instead of --text-soft */
+  .price-row { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+  .price-from { font-size: 13px; font-weight: 600; color: var(--accent); }
+  .price-note { font-size: 12px; color: var(--text-mid); font-weight: 500; }
+
+  .ex-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+  .ex-tag {
+    background: var(--brand-light); color: var(--brand-dark);
+    border-radius: 10px; padding: 2px 8px; font-size: 11px; font-weight: 600;
+  }
+
+  .calc-wrap { max-width: 860px; margin: 0 auto; padding: 2.5rem 1.5rem; }
+  .calc-card { background: #fff; border: 1px solid var(--border-col); border-radius: 16px; overflow: hidden; }
+  .calc-header {
+    background: var(--brand); padding: 1.25rem 1.5rem;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .calc-header i { font-size: 22px; color: rgba(255,255,255,0.8); }
+  .calc-header-text h3 { font-family: var(--serif); font-size: 18px; color: #fff; font-weight: 600; }
+  .calc-header-text p { font-size: 13px; color: rgba(255,255,255,0.7); margin-top: 2px; }
+  .calc-body { padding: 1.5rem; }
+  .calc-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+  .field label { font-size: 12px; font-weight: 600; color: var(--text-mid); display: block; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .field select, .field input {
+    width: 100%; padding: 9px 12px; border: 1px solid var(--border-col);
+    border-radius: 8px; font-size: 13px; font-family: var(--sans);
+    color: var(--text-dark); background: var(--warm); outline: none; transition: border-color 0.18s;
+  }
+  .field select:focus, .field input:focus { border-color: var(--brand); }
+
+  .zone-map { margin-bottom: 1.25rem; }
+  .zone-map-label { font-size: 12px; font-weight: 600; color: var(--text-mid); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 8px; }
+  .zones { display: flex; flex-direction: column; gap: 6px; }
+  .zone-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-col);
+    background: var(--warm); cursor: pointer; transition: all 0.18s;
+  }
+  .zone-row.selected { border-color: var(--brand); background: var(--brand-light); }
+  .zone-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .z1 { background: #2A7A4B; } .z2 { background: #4E8C68; }
+  .z3 { background: #F0A030; } .z4 { background: #C2601A; } .z5 { background: #8B3A1A; }
+  .zone-name { font-size: 13px; font-weight: 500; flex: 1; color: var(--text-dark); }
+  .zone-area { font-size: 12px; color: var(--text-mid); font-weight: 500; }
+  .zone-fee { font-size: 13px; font-weight: 600; color: var(--brand); }
+
+  .result-box {
+    background: var(--brand-light); border: 1px solid var(--brand);
+    border-radius: 12px; padding: 1.25rem; display: none;
+  }
+  .result-box.show { display: block; }
+  .result-top { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem; }
+  .result-section h4 { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--brand); margin-bottom: 4px; }
+  .result-big { font-family: var(--serif); font-size: 26px; font-weight: 600; color: var(--brand-dark); }
+  .result-sub { font-size: 12px; color: var(--text-mid); font-weight: 500; margin-top: 2px; }
+  .result-breakdown { border-top: 1px solid rgba(58,107,79,0.2); padding-top: 0.75rem; display: flex; flex-direction: column; gap: 4px; }
+  .breakdown-row { display: flex; justify-content: space-between; font-size: 13px; }
+  .breakdown-row .bl { color: var(--text-mid); }
+  .breakdown-row .bv { font-weight: 500; color: var(--text-dark); }
+  .result-note { font-size: 12px; color: var(--text-mid); font-weight: 500; margin-top: 0.75rem; line-height: 1.5; }
+  .btn-get-quote {
+    background: var(--accent); color: #fff; border: none;
+    padding: 10px 20px; border-radius: 8px; font-size: 13px;
+    font-weight: 600; font-family: var(--sans); cursor: pointer; margin-top: 1rem; transition: opacity 0.2s;
+  }
+  .btn-get-quote:hover { opacity: 0.88; }
+
+  .about-wrap { max-width: 860px; margin: 0 auto; padding: 0 1.5rem 2.5rem; }
+  .about-card {
+    background: #fff; border: 1px solid var(--border-col);
+    border-radius: 16px; padding: 1.75rem; display: flex;
+    gap: 1.75rem; align-items: flex-start; flex-wrap: wrap;
+  }
+  .avatar-col { flex-shrink: 0; text-align: center; }
+  .avatar {
+    width: 84px; height: 84px; border-radius: 50%; background: var(--brand);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--serif); font-size: 28px; color: #fff; font-weight: 600;
+    border: 3px solid var(--brand-light); margin: 0 auto 6px;
+  }
+  .avail { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #2A7A4B; font-weight: 600; justify-content: center; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: #2A7A4B; }
+  .about-body { flex: 1; min-width: 200px; }
+  .about-body h2 { font-family: var(--serif); font-size: 22px; font-weight: 600; margin-bottom: 3px; }
+  .about-role { font-size: 13px; color: var(--brand); font-weight: 600; margin-bottom: 0.7rem; }
+  .about-body p { font-size: 14px; color: var(--text-mid); line-height: 1.7; margin-bottom: 0.6rem; }
+  .honest {
+    background: var(--accent-light); border-left: 3px solid var(--accent);
+    border-radius: 0 8px 8px 0; padding: 0.7rem 0.9rem;
+    font-size: 13px; color: var(--text-mid); line-height: 1.6; margin-top: 0.5rem;
+  }
+  .honest strong { color: var(--accent); }
+  .skill-pills { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 0.9rem; }
+  .pill {
+    background: var(--warm); border: 1px solid var(--border-col);
+    border-radius: 20px; padding: 3px 10px; font-size: 12px; color: var(--text-mid); font-weight: 500;
+  }
+
+  .guides-wrap { background: var(--brand-dark); padding: 3rem 1.5rem; }
+  .guides-inner { max-width: 860px; margin: 0 auto; }
+  .guides-inner .sec-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #A8D4B8; margin-bottom: 0.4rem; }
+  .guides-inner h2 { font-family: var(--serif); font-size: clamp(20px, 3vw, 28px); color: #fff; font-weight: 600; margin-bottom: 0.4rem; }
+  .guides-inner .sub { font-size: 14px; color: rgba(255,255,255,0.65); margin-bottom: 1.5rem; max-width: 460px; line-height: 1.6; }
+  .guide-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 1rem; }
+  .guide-card {
+    background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.14);
+    border-radius: 12px; padding: 1.2rem; display: flex; flex-direction: column; gap: 0.5rem;
+  }
+  .guide-badge { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: #A8D4B8; }
+  .guide-card h3 { font-size: 14px; font-weight: 600; color: #fff; line-height: 1.35; }
+  .guide-card p { font-size: 12px; color: rgba(255,255,255,0.65); line-height: 1.55; flex: 1; }
+  .guide-price { font-family: var(--serif); font-size: 20px; color: #A8D4B8; font-weight: 600; }
+  .guide-price small { font-size: 12px; color: rgba(255,255,255,0.5); font-family: var(--sans); font-weight: 400; }
+  .btn-guide {
+    background: transparent; border: 1px solid rgba(168,212,184,0.45);
+    color: #A8D4B8; border-radius: 7px; padding: 7px 12px;
+    font-size: 12px; font-weight: 600; font-family: var(--sans); cursor: pointer; transition: all 0.18s;
+  }
+  .btn-guide:hover { background: rgba(168,212,184,0.12); }
+
+  .contact-wrap { max-width: 860px; margin: 0 auto; padding: 2.5rem 1.5rem; }
+  .contact-card { background: #fff; border: 1px solid var(--border-col); border-radius: 16px; overflow: hidden; }
+  .contact-top {
+    background: var(--brand); padding: 1.5rem;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem;
+  }
+  .ct-item { text-align: center; }
+  .ct-item i { font-size: 22px; color: rgba(255,255,255,0.75); display: block; margin-bottom: 4px; }
+  .ct-item .ct-lbl { font-size: 11px; color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 0.05em; }
+  .ct-item .ct-val { font-size: 13px; color: #fff; font-weight: 600; margin-top: 2px; }
+  .contact-form { padding: 1.5rem; }
+  .contact-form h3 { font-family: var(--serif); font-size: 18px; font-weight: 600; margin-bottom: 0.3rem; }
+  .contact-form .sub { font-size: 13px; color: var(--text-mid); font-weight: 500; margin-bottom: 1.25rem; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 0.75rem; }
+  .form-grid .field { display: flex; flex-direction: column; gap: 4px; }
+  .form-grid .field label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-mid); }
+  .form-grid .field input, .form-grid .field select {
+    padding: 9px 12px; border: 1px solid var(--border-col); border-radius: 8px;
+    font-size: 13px; font-family: var(--sans); color: var(--text-dark);
+    background: var(--warm); outline: none; transition: border-color 0.18s;
+  }
+  .form-grid .field input:focus, .form-grid .field select:focus { border-color: var(--brand); }
+  .form-submit { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
+  .btn-submit {
+    background: var(--brand); color: #fff; border: none;
+    padding: 11px 24px; border-radius: 9px; font-size: 14px;
+    font-weight: 600; font-family: var(--sans); cursor: pointer; transition: opacity 0.2s;
+  }
+  .btn-submit:hover { opacity: 0.88; }
+  .form-note { font-size: 12px; color: var(--text-mid); font-weight: 500; }
+  .form-confirm { display: none; background: var(--brand-light); border-radius: 8px; padding: 0.75rem 1rem; font-size: 13px; color: var(--brand-dark); font-weight: 500; margin-top: 0.75rem; }
+  .form-confirm.show { display: block; }
+  .err { border-color: #C0392B !important; }
+
+  footer { background: var(--brand-dark); color: rgba(255,255,255,0.45); text-align: center; padding: 1rem 1.5rem; font-size: 12px; }
+  footer span { color: #A8D4B8; }
+</style>
+
+<h2 class="sr-only">Elysium Works — appliance repair, handyman, and building services on the KZN South Coast</h2>
+
+<nav>
+  <div class="nav-brand"><span>Elysium</span> Works</div>
+  <div class="nav-links">
+    <button class="nav-link" onclick="goTo('services-wrap')">Services</button>
+    <button class="nav-link" onclick="goTo('calc-wrap')">Pricing</button>
+    <button class="nav-link" onclick="goTo('about-wrap')">About</button>
+    <button class="nav-link" onclick="goTo('guides-wrap')">Guides</button>
+  </div>
+  <button class="nav-cta" onclick="goTo('contact-wrap')">Book a job</button>
+</nav>
+
+<section class="hero">
+  <div class="hero-location"><i class="ti ti-map-pin" aria-hidden="true"></i> Elysium · Ifafa · KZN South Coast</div>
+  <h1>Your local fix-it person — <em>no job too small,</em> no build too big</h1>
+  <p>Appliance repair, handyman work, and building services for Elysium and the South Coast communities. Call-out based pricing — you only pay for what's needed.</p>
+  <div class="hero-btns">
+    <button class="btn-primary" onclick="goTo('contact-wrap')">Book a job</button>
+    <button class="btn-ghost" onclick="goTo('calc-wrap')">Check my area &amp; pricing</button>
+  </div>
+  <div class="hero-chips">
+    <div class="chip"><i class="ti ti-plug" aria-hidden="true"></i> Appliance repair</div>
+    <div class="chip"><i class="ti ti-hammer" aria-hidden="true"></i> Handyman</div>
+    <div class="chip"><i class="ti ti-building" aria-hidden="true"></i> Patio &amp; building</div>
+    <div class="chip"><i class="ti ti-home-check" aria-hidden="true"></i> Home inspection</div>
+    <div class="chip"><i class="ti ti-scissors" aria-hidden="true"></i> Small jobs welcome</div>
+  </div>
+</section>
+
+<div id="services-wrap" class="tabs-wrap">
+  <div class="tabs-inner">
+    <div class="tab-bar">
+      <button class="tab-btn active" onclick="switchTab('appliances', this)"><i class="ti ti-plug" aria-hidden="true"></i> Appliances</button>
+      <button class="tab-btn" onclick="switchTab('handyman', this)"><i class="ti ti-hammer" aria-hidden="true"></i> Handyman</button>
+      <button class="tab-btn" onclick="switchTab('building', this)"><i class="ti ti-building" aria-hidden="true"></i> Building &amp; Patio</button>
+      <button class="tab-btn" onclick="switchTab('consulting', this)"><i class="ti ti-clipboard-list" aria-hidden="true"></i> Consulting</button>
+    </div>
+
+    <div id="tab-appliances" class="tab-content active">
+      <div class="card-grid">
+        <div class="svc-card">
+          <div class="svc-icon org"><i class="ti ti-microwave" aria-hidden="true"></i></div>
+          <h3>Microwave repair</h3>
+          <p>Not heating, sparking, or turntable stuck? Most faults are fixable without buying new.</p>
+          <div class="ex-tags"><span class="ex-tag">Magnetron</span><span class="ex-tag">Door switches</span><span class="ex-tag">Capacitors</span></div>
+          <div class="price-row"><span class="price-from">From R250</span><span class="price-note">+ parts · callout by zone</span></div>
+        </div>
+        <div class="svc-card">
+          <div class="svc-icon org"><i class="ti ti-wind" aria-hidden="true"></i></div>
+          <h3>Tumble dryer repair</h3>
+          <p>Not tumbling, not heating, noisy? Fixed dozens of these across the community.</p>
+          <div class="ex-tags"><span class="ex-tag">Heating element</span><span class="ex-tag">Belt &amp; drum</span><span class="ex-tag">Thermostat</span></div>
+          <div class="price-row"><span class="price-from">From R300</span><span class="price-note">+ parts · callout by zone</span></div>
+        </div>
+        <div class="svc-card">
+          <div class="svc-icon org"><i class="ti ti-ripple" aria-hidden="true"></i></div>
+          <h3>Washing machine repair</h3>
+          <p>Leaking, not spinning, error codes? Top loaders and front loaders both sorted.</p>
+          <div class="ex-tags"><span class="ex-tag">Pump &amp; bearings</span><span class="ex-tag">Control board</span><span class="ex-tag">Door seals</span></div>
+          <div class="price-row"><span class="price-from">From R350</span><span class="price-note">+ parts · callout by zone</span></div>
+        </div>
+        <div class="svc-card">
+          <div class="svc-icon org"><i class="ti ti-plug" aria-hidden="true"></i></div>
+          <h3>Other appliances</h3>
+          <p>Fridges, stoves, dishwashers, irons, kettles. Worth fixing before replacing.</p>
+          <div class="price-row"><span class="price-from">From R200</span><span class="price-note">+ parts · callout by zone</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="tab-handyman" class="tab-content">
+      <div class="card-grid">
+        <div class="svc-card">
+          <div class="svc-icon"><i class="ti ti-scissors" aria-hidden="true"></i></div>
+          <h3>Scissor &amp; knife sharpening</h3>
+          <p>Kitchen knives, garden shears, fabric scissors. Done properly, on-site or collected.</p>
+          <div class="price-row"><span class="price-from">From R30</span><span class="price-note">per item</span></div>
+        </div>
+        <div class="svc-card">
+          <div class="svc-icon"><i class="ti ti-paint" aria-hidden="true"></i></div>
+          <h3>Painting &amp; patching</h3>
+          <p>Interior and exterior painting, skim patches, crack filling, prep work done right.</p>
+          <div class="price-row"><span class="price-from">From R400</span><span class="price-note">per day · callout by zone</span></div>
+        </div>
+        <div class="svc-card">
+          <div class="svc-icon"><i class="ti ti-door" aria-hidden="true"></i></div>
+          <h3>Doors, locks &amp; cupboards</h3>
+          <p>Sticking doors, broken locks, cabinet hinges, drawer runners. Small fixes, big difference.</p>
+          <div class="price-row"><span class="price-from">From R200</span><span class="price-note">per job · callout by zone</span></div>
+        </div>
+        <div class="svc-card">
+          <div class="svc-icon"><i class="ti ti-droplet" aria-hidden="true"></i></div>
+          <h3>Plumbing fixes</h3>
+          <p>Leaking taps, blocked drains, toilet cisterns, burst pipes, new shower heads.</p>
+          <div class="price-row"><span class="price-from">From R250</span><span class="price-note">+ parts · callout by zone</span></div>
+        </div>
+        <div class="svc-card">
+          <div class="svc-icon"><i class="ti ti-layout-board" aria-hidden="true"></i></div>
+          <h3>Shelving &amp; carpentry</h3>
+          <p>Custom shelves, built-in storage, garden benches. Designed to fit your space.</p>
+          <div class="price-row"><span class="price-from">From R500</span><span class="price-note">+ materials · callout by zone</span></div>
+        </div>
+        <div class="svc-card">
+          <div class="svc-icon"><i class="ti ti-tool" aria-hidden="true"></i></div>
+          <h3>General maintenance</h3>
+          <p>Gutters, gate hinges, waterproofing, tiling repairs — the full "to-do" list.</p>
+          <div class="price-row"><span class="price-from">From R300</span><span class="price-note">per half-day · callout by zone</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="tab-building" class="tab-content">
+      <div class="card-grid">
+        <div class="svc-card">
+          <div class="svc-icon"><i class="ti ti-sun" aria-hidden="true"></i></div>
+          <h3>New patio installation</h3>
+          <p>Design, level, and build from scratch. Concrete, pavers, or timber — full build.</p>
+          <div class="price-row"><span class="price-from">Quote on request</span><span class="price-note">callout by zone</span></div>
+        </div>
+        <div class="svc-card">
+          <div class="svc-icon"><i class="ti ti-wall" aria-hidden="true"></i></div>
+          <h3>Patio enclosure — glass &amp; aluminium</h3>
+          <p>Enclose an existing patio with aluminium framing and glass — sliding, bi-fold, or fixed panels.</p>
+          <div class="price-row"><span class="price-from">Quote on request</span><span class="price-note">callout by zone</span></div>
+        </div>
+        <div class="svc-card">
+          <div class="svc-icon"><i class="ti ti-home-2" aria-hidden="true"></i></div>
+          <h3>Renovations &amp; additions</h3>
+          <p>Braai room, carport, extra room, boundary wall. Plans, management, and hands-on work.</p>
+          <div class="price-row"><span class="price-from">Quote on request</span><span class="price-note">callout by zone</span></div>
+        </div>
+        <div class="svc-card">
+          <div class="svc-icon"><i class="ti ti-home-check" aria-hidden="true"></i></div>
+          <h3>Roofing repairs</h3>
+          <p>Leaking roof, damaged tiles, fascia boards, gutters. Foundation to roof — literally.</p>
+          <div class="price-row"><span class="price-from">From R800</span><span class="price-note">+ materials · callout by zone</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="tab-consulting" class="tab-content">
+      <div class="card-grid">
+        <div class="svc-card">
+          <div class="svc-icon"><i class="ti ti-search" aria-hidden="true"></i></div>
+          <h3>Home inspection &amp; snag list</h3>
+          <p>Pre-purchase checks and post-build snagging. Know what you're buying before you sign.</p>
+          <div class="price-row"><span class="price-from">From R800</span><span class="price-note">per visit · callout by zone</span></div>
+        </div>
+        <div class="svc-card">
+          <div class="svc-icon"><i class="ti ti-clipboard-list" aria-hidden="true"></i></div>
+          <h3>Renovation project management</h3>
+          <p>Keep your contractors accountable. I monitor quality, schedule, and materials on your behalf.</p>
+          <div class="price-row"><span class="price-from">From R1,000</span><span class="price-note">per day · callout by zone</span></div>
+        </div>
+        <div class="svc-card">
+          <div class="svc-icon"><i class="ti ti-stethoscope" aria-hidden="true"></i></div>
+          <h3>Problem diagnosis</h3>
+          <p>Damp, cracks, structural concerns, mystery leaks. Know what's actually going on first.</p>
+          <div class="price-row"><span class="price-from">From R500</span><span class="price-note">per visit · callout by zone</span></div>
+        </div>
+        <div class="svc-card">
+          <div class="svc-icon"><i class="ti ti-ruler-2" aria-hidden="true"></i></div>
+          <h3>Plan reading &amp; advice</h3>
+          <p>Building plans in plain language. Flag problems before you approve anything.</p>
+          <div class="price-row"><span class="price-from">From R600</span><span class="price-note">per session · callout by zone</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="calc-wrap" class="calc-wrap">
+  <div class="calc-card">
+    <div class="calc-header">
+      <i class="ti ti-map-2" aria-hidden="true"></i>
+      <div class="calc-header-text">
+        <h3>Check your area &amp; get an estimate</h3>
+        <p>Select your location and job type — callout fee and total estimate shown instantly</p>
+      </div>
+    </div>
+    <div class="calc-body">
+      <div class="zone-map">
+        <div class="zone-map-label">Select your area</div>
+        <div class="zones">
+          <div class="zone-row selected" onclick="selectZone(this, 'Elysium / Ifafa', 50)">
+            <span class="zone-dot z1"></span>
+            <span class="zone-name">Elysium / Ifafa</span>
+            <span class="zone-area">Home base · 0–5km</span>
+            <span class="zone-fee">R50 callout</span>
+          </div>
+          <div class="zone-row" onclick="selectZone(this, 'Pennington / Umzumbe', 100)">
+            <span class="zone-dot z2"></span>
+            <span class="zone-name">Pennington / Umzumbe</span>
+            <span class="zone-area">~5–10km</span>
+            <span class="zone-fee">R100 callout</span>
+          </div>
+          <div class="zone-row" onclick="selectZone(this, 'Hibberdene / Umzinto', 150)">
+            <span class="zone-dot z3"></span>
+            <span class="zone-name">Hibberdene / Umzinto</span>
+            <span class="zone-area">~10–20km</span>
+            <span class="zone-fee">R150 callout</span>
+          </div>
+          <div class="zone-row" onclick="selectZone(this, 'Scottburgh / Park Rynie', 200)">
+            <span class="zone-dot z4"></span>
+            <span class="zone-name">Scottburgh / Park Rynie</span>
+            <span class="zone-area">~20–30km</span>
+            <span class="zone-fee">R200 callout</span>
+          </div>
+          <div class="zone-row" onclick="selectZone(this, 'Port Shepstone / further', 250)">
+            <span class="zone-dot z5"></span>
+            <span class="zone-name">Port Shepstone / further</span>
+            <span class="zone-area">~30–40km+ · bigger jobs preferred</span>
+            <span class="zone-fee">R250+ callout</span>
+          </div>
+        </div>
+      </div>
+      <div class="calc-row">
+        <div class="field">
+          <label>Type of job</label>
+          <select id="job-type" onchange="updateEstimate()">
+            <option value="">Select a job...</option>
+            <option value="appliance">Appliance repair</option>
+            <option value="handyman-small">Handyman — small job</option>
+            <option value="handyman-day">Handyman — full day</option>
+            <option value="plumbing">Plumbing fix</option>
+            <option value="patio">New patio</option>
+            <option value="enclosure">Patio enclosure</option>
+            <option value="renovation">Renovation / addition</option>
+            <option value="inspection">Home inspection</option>
+            <option value="diagnosis">Problem diagnosis</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Size / complexity</label>
+          <select id="job-size" onchange="updateEstimate()">
+            <option value="s">Small / simple</option>
+            <option value="m" selected>Medium</option>
+            <option value="l">Large / complex</option>
+          </select>
+        </div>
+      </div>
+      <div class="result-box" id="result-box">
+        <div class="result-top">
+          <div class="result-section">
+            <h4>Labour estimate</h4>
+            <div class="result-big" id="res-labour">—</div>
+            <div class="result-sub">Parts &amp; materials not included</div>
+          </div>
+          <div class="result-section">
+            <h4>Callout fee</h4>
+            <div class="result-big" id="res-callout">R50</div>
+            <div class="result-sub" id="res-zone-name">Elysium / Ifafa</div>
+          </div>
+          <div class="result-section">
+            <h4>Total estimate</h4>
+            <div class="result-big" id="res-total">—</div>
+            <div class="result-sub">Before parts</div>
+          </div>
+        </div>
+        <div class="result-breakdown">
+          <div class="breakdown-row"><span class="bl">Labour range</span><span class="bv" id="bd-labour">—</span></div>
+          <div class="breakdown-row"><span class="bl">Callout fee</span><span class="bv" id="bd-callout">R50</span></div>
+          <div class="breakdown-row"><span class="bl">Parts / materials</span><span class="bv">Quoted separately</span></div>
+        </div>
+        <div class="result-note">Estimate only — final price confirmed after I've seen the job. No surprises.</div>
+        <button class="btn-get-quote" onclick="goTo('contact-wrap')">Book this job ↗</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="about-wrap" class="about-wrap">
+  <div class="about-card">
+    <div class="avatar-col">
+      <div class="avatar">EW</div>
+      <div class="avail"><span class="dot"></span> Available</div>
+    </div>
+    <div class="about-body">
+      <h2>Your neighbour with the right skills</h2>
+      <div class="about-role">Builder · Repairer · Handyman · Elysium, KZN South Coast</div>
+      <p>For years I've been fixing appliances for people in this community for free — washing machines, tumble driers, microwaves — because I enjoy the problem-solving and hate seeing things go to landfill unnecessarily. Now I'm making it a proper service.</p>
+      <p>On the building side I've worked across full residential builds, from laying foundations to the last roof tile — carpentry, plumbing, plan reading, site management. I've completed most modules toward a mechanical engineering qualification and bring that technical thinking to every job.</p>
+      <div class="honest">
+        <strong>Straight talk:</strong> I won't claim qualifications I don't fully hold. What I will say is that I've done the work, I know what I'm doing, and every job gets the same care I gave to neighbours I helped for free.
+      </div>
+      <div class="skill-pills">
+        <span class="pill">Appliance repair</span><span class="pill">Residential construction</span>
+        <span class="pill">Carpentry</span><span class="pill">Plumbing</span>
+        <span class="pill">Plan reading</span><span class="pill">Surveying</span>
+        <span class="pill">Project management</span><span class="pill">Glass &amp; aluminium</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="guides-wrap" class="guides-wrap">
+  <div class="guides-inner">
+    <div class="sec-label">Digital downloads</div>
+    <h2>Practical guides — buy once, use forever</h2>
+    <p class="sub">Written from real experience. No fluff. Download instantly on Gumroad.</p>
+    <div class="guide-grid">
+      <div class="guide-card">
+        <div class="guide-badge">PDF Guide</div>
+        <h3>Don't get ripped off by your contractor</h3>
+        <p>Red flags, payment schedules, and what to check at every stage of a SA build.</p>
+        <div class="guide-price">R149 <small>once-off</small></div>
+        <button class="btn-guide">Buy on Gumroad ↗</button>
+      </div>
+      <div class="guide-card">
+        <div class="guide-badge">Checklist</div>
+        <h3>Home buyer inspection — 120-point checklist</h3>
+        <p>What a professional checks before you sign an OTP. Foundation to roof.</p>
+        <div class="guide-price">R79 <small>once-off</small></div>
+        <button class="btn-guide">Buy on Gumroad ↗</button>
+      </div>
+      <div class="guide-card">
+        <div class="guide-badge">DIY Guide</div>
+        <h3>Basic appliance fault-finding for homeowners</h3>
+        <p>Safe checks you can do yourself before calling anyone — saves time and money.</p>
+        <div class="guide-price">R59 <small>once-off</small></div>
+        <button class="btn-guide">Buy on Gumroad ↗</button>
+      </div>
+      <div class="guide-card">
+        <div class="guide-badge">PDF Guide</div>
+        <h3>Reading your building plans — plain language</h3>
+        <p>Understand what you've approved before it gets built. Written for homeowners.</p>
+        <div class="guide-price">R129 <small>once-off</small></div>
+        <button class="btn-guide">Buy on Gumroad ↗</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="contact-wrap" class="contact-wrap">
+  <div class="contact-card">
+    <div class="contact-top">
+      <div class="ct-item"><i class="ti ti-brand-whatsapp" aria-hidden="true"></i><div class="ct-lbl">WhatsApp</div><div class="ct-val">Fastest response</div></div>
+      <div class="ct-item"><i class="ti ti-phone" aria-hidden="true"></i><div class="ct-lbl">Phone</div><div class="ct-val">Add your number</div></div>
+      <div class="ct-item"><i class="ti ti-brand-facebook" aria-hidden="true"></i><div class="ct-lbl">Facebook</div><div class="ct-val">Elysium Works</div></div>
+      <div class="ct-item"><i class="ti ti-map-pin" aria-hidden="true"></i><div class="ct-lbl">Based in</div><div class="ct-val">Elysium / Ifafa</div></div>
+    </div>
+    <div class="contact-form">
+      <h3>Send a booking request</h3>
+      <p class="sub">Leave your details and I'll get back to you — usually same day.</p>
+      <div class="form-grid">
+        <div class="field"><label>Your name</label><input type="text" id="f-name" placeholder="e.g. Sarah" /></div>
+        <div class="field"><label>Phone / WhatsApp</label><input type="tel" id="f-phone" placeholder="e.g. 082 000 0000" /></div>
+        <div class="field">
+          <label>Your area</label>
+          <select id="f-area">
+            <option>Elysium / Ifafa</option><option>Pennington / Umzumbe</option>
+            <option>Hibberdene / Umzinto</option><option>Scottburgh / Park Rynie</option>
+            <option>Port Shepstone / further</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Type of job</label>
+          <select id="f-job">
+            <option>Appliance repair</option><option>Handyman work</option>
+            <option>Patio / building</option><option>Home inspection</option><option>Not sure yet</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-submit">
+        <button class="btn-submit" onclick="submitForm()">Send booking request</button>
+        <span class="form-note">No commitment — just a conversation</span>
+      </div>
+      <div class="form-confirm" id="form-confirm">
+        <i class="ti ti-circle-check" aria-hidden="true"></i> Got it! I'll be in touch soon. Thanks for reaching out to Elysium Works.
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>KZN South Coast · <span>Elysium Works</span> · Serving Elysium, Ifafa &amp; neighbouring communities · © 2026</footer>
+
+<script>
+function goTo(id) { const el = document.getElementById(id); if (el) el.scrollIntoView({ behavior: 'smooth' }); }
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+}
+const labour = {
+  appliance:        { s:[250,400],    m:[400,650],    l:[650,1000] },
+  'handyman-small': { s:[200,350],    m:[350,550],    l:[550,900] },
+  'handyman-day':   { s:[400,600],    m:[600,900],    l:[800,1200] },
+  plumbing:         { s:[250,400],    m:[400,700],    l:[700,1200] },
+  patio:            { s:[4000,8000],  m:[8000,18000], l:[18000,35000] },
+  enclosure:        { s:[12000,22000],m:[22000,40000],l:[40000,70000] },
+  renovation:       { s:[15000,35000],m:[35000,90000],l:[90000,200000] },
+  inspection:       { s:[800,1000],   m:[1000,1400],  l:[1400,2000] },
+  diagnosis:        { s:[500,700],    m:[700,1000],   l:[1000,1500] },
+};
+let currentCallout = 50;
+let currentZoneName = 'Elysium / Ifafa';
+function selectZone(el, name, fee) {
+  document.querySelectorAll('.zone-row').forEach(r => r.classList.remove('selected'));
+  el.classList.add('selected');
+  currentCallout = fee; currentZoneName = name;
+  updateEstimate();
+}
+function fmt(n) { return 'R' + n.toLocaleString('en-ZA'); }
+function updateEstimate() {
+  const type = document.getElementById('job-type').value;
+  const size = document.getElementById('job-size').value;
+  const box = document.getElementById('result-box');
+  if (!type) { box.classList.remove('show'); return; }
+  const range = labour[type][size];
+  document.getElementById('res-labour').textContent = fmt(range[0]) + '–' + fmt(range[1]);
+  document.getElementById('res-callout').textContent = fmt(currentCallout);
+  document.getElementById('res-zone-name').textContent = currentZoneName;
+  document.getElementById('res-total').textContent = fmt(range[0] + currentCallout) + '–' + fmt(range[1] + currentCallout);
+  document.getElementById('bd-labour').textContent = fmt(range[0]) + '–' + fmt(range[1]);
+  document.getElementById('bd-callout').textContent = fmt(currentCallout);
+  box.classList.add('show');
+}
+function submitForm() {
+  const name = document.getElementById('f-name');
+  const phone = document.getElementById('f-phone');
+  let valid = true;
+  [name, phone].forEach(f => { if (!f.value.trim()) { f.classList.add('err'); valid = false; } else f.classList.remove('err'); });
+  if (!valid) return;
+  document.querySelector('.form-submit').style.display = 'none';
+  document.querySelector('.form-grid').style.opacity = '0.4';
+  document.querySelector('.form-grid').style.pointerEvents = 'none';
+  document.getElementById('form-confirm').classList.add('show');
+}
+</script>
