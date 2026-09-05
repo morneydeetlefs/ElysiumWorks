@@ -312,6 +312,115 @@
 
   footer { background: var(--brand-dark); color: rgba(255,255,255,0.45); text-align: center; padding: 1rem 1.5rem; font-size: 12px; }
   footer span { color: #A8D4B8; }
+
+  /* ══ MOBILE RESPONSIVE ══════════════════════════════════════ */
+  @media (max-width: 600px) {
+
+    /* Nav — hide text links, keep CTA */
+    nav { padding: 0 1rem; height: 54px; }
+    .nav-links { display: none; }
+    .nav-brand { font-size: 17px; }
+    .nav-cta { padding: 7px 14px; font-size: 13px; }
+    .nav-link-app {
+      font-size: 12px; padding: 5px 10px;
+    }
+
+    /* Hero */
+    .hero { padding: 2rem 1.25rem 2.5rem; }
+    .hero h1 { font-size: 28px; letter-spacing: -0.02em; }
+    .hero p { font-size: 14px; margin-bottom: 1.5rem; }
+    .hero-btns { flex-direction: column; align-items: stretch; gap: 8px; }
+    .btn-primary, .btn-ghost { width: 100%; padding: 13px 20px; font-size: 15px; }
+
+    /* Hero chips — horizontal scroll instead of wrap */
+    .hero-chips {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      justify-content: flex-start;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: 4px;
+      margin-left: -1.25rem;
+      margin-right: -1.25rem;
+      padding-left: 1.25rem;
+      padding-right: 1.25rem;
+    }
+    .hero-chips::-webkit-scrollbar { display: none; }
+    .chip { flex-shrink: 0; }
+
+    /* Services tabs */
+    .tabs-inner { padding: 0 1rem; }
+    .tab-btn { padding: 0.8rem 0.75rem; font-size: 12px; }
+    .tab-content { padding: 1.25rem 0 1.5rem; }
+
+    /* Service cards — single column */
+    .card-grid { grid-template-columns: 1fr; gap: 0.75rem; }
+    .svc-card { padding: 1.1rem; }
+
+    /* Callout calculator */
+    .calc-wrap { padding: 1.5rem 1rem; }
+    .calc-header { padding: 1rem 1.25rem; }
+    .calc-header i { font-size: 18px; }
+    .calc-header-text h3 { font-size: 16px; }
+    .calc-body { padding: 1.25rem 1rem; }
+    .calc-row { grid-template-columns: 1fr; gap: 0.75rem; }
+
+    /* Zone rows — stack area and fee */
+    .zone-row { flex-wrap: wrap; gap: 6px; padding: 10px 12px; }
+    .zone-name { flex: 1 1 100%; font-size: 14px; }
+    .zone-area { font-size: 11px; flex: 1; }
+    .zone-fee { font-size: 13px; }
+
+    /* Result box */
+    .result-top { flex-direction: column; gap: 0.75rem; }
+    .result-big { font-size: 22px; }
+
+    /* About */
+    .about-wrap { padding: 0 1rem 2rem; }
+    .about-card { flex-direction: column; gap: 1.25rem; padding: 1.25rem; }
+    .avatar-col { display: flex; align-items: center; gap: 1rem; text-align: left; }
+    .avatar { width: 64px; height: 64px; font-size: 22px; margin: 0; }
+    .avail { justify-content: flex-start; }
+    .about-body h2 { font-size: 19px; }
+
+    /* Guides */
+    .guides-wrap { padding: 2rem 1rem; }
+    .guide-grid { grid-template-columns: 1fr; }
+
+    /* Contact */
+    .contact-wrap { padding: 1.5rem 1rem; }
+    .form-grid { grid-template-columns: 1fr; }
+    .contact-top { grid-template-columns: 1fr 1fr; gap: 0.75rem; padding: 1.25rem 1rem; }
+
+    /* Show a mobile nav menu instead */
+    .mobile-nav-menu {
+      display: flex;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      background: rgba(0,0,0,0.25);
+      padding: 0 1rem;
+    }
+    .mobile-nav-menu::-webkit-scrollbar { display: none; }
+    .mobile-nav-menu .nav-link {
+      font-size: 12px; padding: 6px 10px; white-space: nowrap; flex-shrink: 0;
+    }
+    .mobile-nav-menu .nav-link-app { font-size: 12px; padding: 5px 10px; white-space: nowrap; flex-shrink: 0; }
+  }
+
+  /* Mobile nav secondary bar (shown only on mobile) */
+  .mobile-nav-bar {
+    display: none;
+    background: var(--brand-dark);
+    border-top: 1px solid rgba(255,255,255,0.08);
+    padding: 4px 1rem;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    gap: 2px;
+  }
+  .mobile-nav-bar::-webkit-scrollbar { display: none; }
+  @media (max-width: 600px) {
+    .mobile-nav-bar { display: flex; }
+    .nav-links { display: none; }
+  }
 </style>
 
 <h2 class="sr-only">Elysium Works — appliance repair, handyman, and building services on the KZN South Coast</h2>
@@ -323,10 +432,18 @@
     <button class="nav-link" onclick="goTo('calc-wrap')">Pricing</button>
     <button class="nav-link" onclick="goTo('about-wrap')">About</button>
     <button class="nav-link" onclick="goTo('guides-wrap')">Guides</button>
-    <a class="nav-link-app" href="/app">Inspector ↗</a>
-  </div>
-  <button class="nav-cta" onclick="goTo('contact-wrap')">Book a job</button>
+    <a class="nav-link-app" href="/demo">Try Demo ↗</a>
 </nav>
+
+<!-- Mobile-only secondary nav bar -->
+<div class="mobile-nav-bar">
+  <button class="nav-link" onclick="goTo('services-wrap')">Services</button>
+  <button class="nav-link" onclick="goTo('calc-wrap')">Pricing</button>
+  <button class="nav-link" onclick="goTo('about-wrap')">About</button>
+  <button class="nav-link" onclick="goTo('guides-wrap')">Guides</button>
+  <button class="nav-link" onclick="goTo('contact-wrap')">Contact</button>
+  <a class="nav-link-app" href="/demo" style="margin-left:4px">Try Demo ↗</a>
+</div>
 
 <section class="hero">
   <div class="hero-location"><i class="ti ti-map-pin" aria-hidden="true"></i> Elysium · Ifafa · KZN South Coast</div>
@@ -342,7 +459,7 @@
     <div class="chip"><i class="ti ti-building" aria-hidden="true"></i> Patio &amp; building</div>
     <div class="chip"><i class="ti ti-home-check" aria-hidden="true"></i> Home inspection</div>
     <div class="chip"><i class="ti ti-scissors" aria-hidden="true"></i> Small jobs welcome</div>
-    <div class="chip" style="border-color:rgba(194,96,26,0.45);color:#F0A878;background:rgba(194,96,26,0.12);cursor:pointer" onclick="window.location='/app'"><i class="ti ti-clipboard-check" aria-hidden="true"></i> Inspector app</div>
+    <div class="chip" style="border-color:rgba(194,96,26,0.45);color:#F0A878;background:rgba(194,96,26,0.12);cursor:pointer" onclick="window.location='/demo'"><i class="ti ti-clipboard-check" aria-hidden="true"></i> Try demo</div>
   </div>
 </section>
 
@@ -635,7 +752,7 @@
         <h3>120-point inspection app — on-site report builder</h3>
         <p>Run a full property inspection on your phone. Pass/fail checklist, cost estimates, photos, and a branded PDF report — works offline on-site.</p>
         <div class="guide-price" style="color:#F0A878">Free <small style="color:rgba(255,255,255,0.45)">included with inspection service</small></div>
-        <a class="btn-guide-app" href="/app">Open the app ↗</a>
+        <a class="btn-guide-app" href="/demo">Try the demo ↗</a>
       </div>
       <div class="guide-card">
         <div class="guide-badge">PDF Guide</div>

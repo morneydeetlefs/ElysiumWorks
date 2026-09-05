@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
+<meta name="theme-color" content="#264736"/>
+<title>Home Inspection Demo — Elysium Works</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;1,9..144,400&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css"/>
+<style>
+:root {
+  --brand:       #3A6B4F;
+  --brand-dark:  #264736;
+  --brand-mid:   #4E8C68;
+  --brand-light: #EAF2EC;
+  --warm:        #F8F6F1;
+  --accent:      #C2601A;
+  --accent-lt:   #FDF0E4;
+  --text-dark:   #1A1A18;
+  --text-mid:    #4A4845;
+  --text-soft:   #6A6760;
+  --border:      #E6E2DA;
+  --pass:        #1e5c38;
+  --pass-lt:     #4caf7a;
+  --pass-bg:     #eaf7f0;
+  --fail:        #6b2020;
+  --fail-lt:     #e05252;
+  --fail-bg:     #fdf0f0;
+  --mon:         #5c3d0a;
+  --mon-lt:      #d4891a;
+  --mon-bg:      #fdf5e6;
+  --serif:       'Fraunces', Georgia, serif;
+  --sans:        'Outfit', system-ui, sans-serif;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; background: var(--warm); font-family: var(--sans); color: var(--text-dark); }
+-webkit-tap-highlight-color: transparent;
+
+/* ── TOP BAR ── */
+.topbar {
+  background: var(--brand-dark);
+  display: flex; align-items: center; gap: .75rem;
+  padding: .75rem 1rem;
+  flex-shrink: 0;
+}
+.topbar-brand {
+  font-family: var(--serif);
+  font-size: 1rem; font-weight: 600;
+  color: #fff; flex: 1;
+}
+.topbar-brand span { color: #A8D4B8; font-style: italic; }
+.demo-pill {
+  background: var(--accent); color: #fff;
+  font-size: .65rem; font-weight: 700;
+  letter-spacing: .08em; text-transform: uppercase;
+  padding: .25rem .65rem; border-radius: 20px;
+}
+.back-link {
+  color: rgba(255,255,255,.6);
+  font-size: .8rem; text-decoration: none;
+  display: flex; align-items: center; gap: .3rem;
+}
+.back-link:hover { color: #fff; }
+
+/* ── DEMO BANNER ── */
+.demo-banner {
+  background: var(--accent-lt);
+  border-bottom: 1px solid rgba(194,96,26,.25);
+  padding: .65rem 1rem;
+  display: flex; align-items: center; gap: .75rem;
+  flex-shrink: 0;
+}
+.demo-banner i { color: var(--accent); font-size: 1.1rem; flex-shrink: 0; }
+.demo-banner-text { font-size: .8rem; color: var(--text-mid); line-height: 1.45; flex: 1; }
+.demo-banner-text strong { color: var(--accent); }
+
+/* ── PROGRESS ── */
+.progress-wrap {
+  background: #fff;
+  border-bottom: 1px solid var(--border);
+  padding: .75rem 1rem .6rem;
+  flex-shrink: 0;
+}
+.progress-bar-track {
+  background: var(--border); border-radius: 4px; height: 5px; overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--brand), var(--brand-mid));
+  border-radius: 4px; transition: width .4s ease;
+}
+.progress-labels {
+  display: flex; justify-content: space-between;
+  font-size: .72rem; color: var(--text-soft);
+  margin-top: .35rem;
+}
+
+/* ── ZONE TABS ── */
+.zone-tabs-wrap {
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
+  background: #fff; border-bottom: 2px solid var(--border);
+  flex-shrink: 0;
+}
+.zone-tabs-wrap::-webkit-scrollbar { display: none; }
+.zone-tabs { display: flex; padding: 0 .5rem; min-width: max-content; gap: 0; }
+.zone-tab {
+  padding: .7rem .9rem;
+  font-size: .72rem; font-weight: 500;
+  color: var(--text-soft);
+  background: none; border: none; border-bottom: 2px solid transparent;
+  margin-bottom: -2px; cursor: pointer; white-space: nowrap;
+  font-family: var(--sans); transition: all .18s;
+  display: flex; align-items: center; gap: .4rem;
+  -webkit-tap-highlight-color: transparent;
+}
+.zone-tab.active { color: var(--brand); border-bottom-color: var(--brand); }
+.zone-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--border); flex-shrink: 0; transition: background .2s;
+}
+.zone-tab.done .zone-dot { background: var(--pass-lt); }
+.zone-tab.partial .zone-dot { background: var(--mon-lt); }
+
+/* ── SCROLL CONTENT ── */
+#app {
+  position: fixed; inset: 0;
+  display: flex; flex-direction: column;
+}
+.scroll-content {
+  flex: 1; overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding: .75rem;
+}
+.scroll-content::-webkit-scrollbar { display: none; }
+
+/* ── CHECKLIST ITEMS ── */
+.item-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin-bottom: .6rem;
+  overflow: hidden;
+  transition: border-color .15s;
+}
+.item-card.has-pass { border-color: rgba(76,175,122,.35); }
+.item-card.has-fail { border-color: rgba(224,82,82,.4); }
+.item-card.has-mon  { border-color: rgba(212,137,26,.4); }
+
+.item-header {
+  display: flex; align-items: center; gap: .6rem;
+  padding: .85rem .9rem .85rem 1rem;
+  cursor: pointer;
+}
+.item-num {
+  font-size: .68rem; font-weight: 600;
+  color: var(--text-soft); width: 1.8rem;
+  flex-shrink: 0;
+}
+.item-name {
+  flex: 1; font-size: .88rem;
+  color: var(--text-dark); line-height: 1.35;
+}
+.item-status-icon { font-size: 1rem; flex-shrink: 0; }
+
+.status-btns {
+  display: grid; grid-template-columns: repeat(4,1fr);
+  gap: .4rem; padding: 0 .9rem .85rem;
+}
+.sbtn {
+  padding: .6rem .3rem;
+  border: 1.5px solid var(--border);
+  border-radius: 7px;
+  font-size: .72rem; font-weight: 600;
+  font-family: var(--sans);
+  color: var(--text-soft);
+  background: var(--warm);
+  cursor: pointer; transition: all .12s;
+  -webkit-tap-highlight-color: transparent;
+  text-align: center;
+}
+.sbtn:active { transform: scale(.96); }
+.sbtn.pass.sel { background: var(--pass-bg); border-color: var(--pass-lt); color: var(--pass); }
+.sbtn.fail.sel { background: var(--fail-bg); border-color: var(--fail-lt); color: var(--fail); }
+.sbtn.mon.sel  { background: var(--mon-bg);  border-color: var(--mon-lt);  color: var(--mon); }
+.sbtn.na.sel   { background: #f4f4f2; border-color: #ccc; color: var(--text-soft); }
+
+/* Notes field (expands on Fail/Monitor) */
+.item-notes {
+  display: none;
+  padding: 0 .9rem .85rem;
+}
+.item-notes.open { display: block; }
+.notes-input {
+  width: 100%; padding: .6rem .75rem;
+  border: 1px solid var(--border); border-radius: 7px;
+  font-size: .83rem; font-family: var(--sans);
+  color: var(--text-dark); background: var(--warm);
+  resize: none; outline: none;
+  transition: border-color .18s;
+}
+.notes-input:focus { border-color: var(--brand); }
+
+/* ── COST BAR ── */
+.cost-bar {
+  background: var(--brand-dark);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: .7rem 1rem;
+  flex-shrink: 0;
+}
+.cost-bar-label { font-size: .72rem; color: rgba(255,255,255,.6); }
+.cost-bar-value {
+  font-family: var(--serif); font-size: 1.1rem;
+  color: #A8D4B8; font-weight: 600;
+}
+
+/* ── CTA MODAL ── */
+.cta-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,.55);
+  display: flex; align-items: flex-end;
+  opacity: 0; pointer-events: none;
+  transition: opacity .25s;
+}
+.cta-overlay.open { opacity: 1; pointer-events: all; }
+.cta-sheet {
+  background: #fff;
+  border-radius: 18px 18px 0 0;
+  padding: 1.5rem 1.5rem calc(1.5rem + env(safe-area-inset-bottom));
+  width: 100%;
+  transform: translateY(100%);
+  transition: transform .3s cubic-bezier(.32,1,.64,1);
+  text-align: center;
+}
+.cta-overlay.open .cta-sheet { transform: translateY(0); }
+.cta-handle {
+  width: 36px; height: 4px; background: var(--border);
+  border-radius: 2px; margin: 0 auto 1.25rem;
+}
+.cta-icon { font-size: 2.5rem; margin-bottom: .75rem; }
+.cta-title {
+  font-family: var(--serif); font-size: 1.3rem; font-weight: 600;
+  color: var(--text-dark); margin-bottom: .5rem; line-height: 1.3;
+}
+.cta-sub {
+  font-size: .88rem; color: var(--text-mid);
+  line-height: 1.6; margin-bottom: 1.5rem;
+}
+.cta-wa {
+  display: flex; align-items: center; justify-content: center; gap: .6rem;
+  background: #25D366; color: #fff;
+  border: none; border-radius: 10px;
+  padding: .9rem 1.5rem; width: 100%;
+  font-size: .95rem; font-weight: 600;
+  font-family: var(--sans); cursor: pointer;
+  margin-bottom: .75rem; text-decoration: none;
+}
+.cta-wa:active { opacity: .88; }
+.cta-dismiss {
+  background: none; border: none;
+  color: var(--text-soft); font-size: .82rem;
+  font-family: var(--sans); cursor: pointer;
+  padding: .5rem;
+}
+
+/* ── SUMMARY PANEL ── */
+.summary-bar {
+  background: #fff; border-top: 1px solid var(--border);
+  padding: .6rem 1rem;
+  display: flex; gap: .5rem; align-items: center;
+  flex-shrink: 0;
+}
+.summary-chip {
+  font-size: .72rem; font-weight: 600;
+  padding: .3rem .7rem; border-radius: 20px;
+}
+.sc-pass { background: var(--pass-bg); color: var(--pass); }
+.sc-fail { background: var(--fail-bg); color: var(--fail); }
+.sc-mon  { background: var(--mon-bg);  color: var(--mon); }
+.cta-book-btn {
+  margin-left: auto;
+  background: var(--accent); color: #fff;
+  border: none; border-radius: 8px;
+  padding: .55rem 1rem;
+  font-size: .8rem; font-weight: 600;
+  font-family: var(--sans); cursor: pointer;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (min-width: 500px) {
+  #app { max-width: 480px; margin: 0 auto; }
+}
+</style>
+</head>
+<body>
+
+<!-- CTA MODAL -->
+<div class="cta-overlay" id="ctaOverlay">
+  <div class="cta-sheet">
+    <div class="cta-handle"></div>
+    <div class="cta-icon">🏠</div>
+    <div class="cta-title">Get the full inspection report</div>
+    <div class="cta-sub">
+      Elysium Works uses this app on-site to log every item, capture photos, and generate a branded PDF report — ready to email to your attorney or agent the same day.
+    </div>
+    <a class="cta-wa" href="https://wa.me/27718181132?text=Hi%20Morney%2C%20I%20used%20the%20inspection%20demo%20and%20would%20like%20to%20book%20a%20full%20inspection." target="_blank" rel="noopener">
+      <i class="ti ti-brand-whatsapp"></i> Book an inspection — WhatsApp
+    </a>
+    <button class="cta-dismiss" onclick="closeCTA()">Continue exploring the demo</button>
+  </div>
+</div>
+
+<div id="app">
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <a class="back-link" href="/"><i class="ti ti-arrow-left"></i></a>
+    <div class="topbar-brand"><span>Elysium</span> Works</div>
+    <span class="demo-pill">Demo</span>
+  </div>
+
+  <!-- DEMO BANNER -->
+  <div class="demo-banner">
+    <i class="ti ti-info-circle"></i>
+    <div class="demo-banner-text">
+      <strong>This is a free demo.</strong> Explore the full 120-point checklist — notes included. Save, photos &amp; PDF report available when you book an inspection.
+    </div>
+  </div>
+
+  <!-- PROGRESS -->
+  <div class="progress-wrap">
+    <div class="progress-bar-track">
+      <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
+    </div>
+    <div class="progress-labels">
+      <span id="progressDone">0 items logged</span>
+      <span id="progressPct">0%</span>
+    </div>
+  </div>
+
+  <!-- ZONE TABS -->
+  <div class="zone-tabs-wrap">
+    <div class="zone-tabs" id="zoneTabs"></div>
+  </div>
+
+  <!-- CHECKLIST -->
+  <div class="scroll-content" id="checklistContent"></div>
+
+  <!-- SUMMARY BAR -->
+  <div class="summary-bar">
+    <span class="summary-chip sc-pass" id="sc-pass">✓ 0</span>
+    <span class="summary-chip sc-fail" id="sc-fail">✗ 0</span>
+    <span class="summary-chip sc-mon"  id="sc-mon">⚠ 0</span>
+    <button class="cta-book-btn" onclick="openCTA()">Book full inspection</button>
+  </div>
+</div>
+
+<script>
+const ZONES = [
+  { name:'Roof & Attic', icon:'🏠', items:['Roof covering condition (tiles/sheeting)','Ridge cap and mortar joints','Roof battens and purlins visible','Attic ventilation and airflow','Roof structure — rafters and trusses','Signs of water ingress or staining','Insulation presence and condition','Access hatch condition','Skylights or vents sealed correctly','Verge and fascia boards','Sarking / underlay where applicable','Overall roof pitch and alignment','Evidence of pest or bird nesting','TV antenna / solar mounting fixings','Chimney flashing and condition'] },
+  { name:'Gutters & Drainage', icon:'🌧️', items:['Gutter alignment and fall direction','Gutter joints — sealed and watertight','Downpipe connections and fixings','Downpipe discharge points','Gutter debris and blockage','Fascia boards behind gutters','Stormwater drain inlets clear','Pooling water around foundation','Ground slope away from structure','Splash aprons at downpipes'] },
+  { name:'Exterior Walls', icon:'🧱', items:['Plaster condition — cracks or spalling','Paint condition and moisture bubbling','Wall tie failure indicators','Horizontal cracking in mortar courses','Diagonal cracking at openings','Efflorescence (salt staining)','Damp penetration marks','Vents and airbricks present and clear','Wall-to-roof junction sealed','Expansion joints present where needed','DPC (damp proof course) visible/intact','Surface coating integrity','Structural bulging or bowing','Cladding or capping details','General weatherproofing condition'] },
+  { name:'Windows & Doors', icon:'🚪', items:['Frame condition — timber/aluminium','Glazing sealed and intact','Putty or sealant around glass','Opening and closing operation smooth','Locks and handles functional','Security bars fitted and fixed','Sill weatherproofing and slope','Lintels above openings intact','Flashing above frames','Gap between frame and wall sealed','Door threshold and weather strip','Hinges and closers functional','Window stays and restrictors','Safety glazing where required','Fly screens present and intact'] },
+  { name:'Foundation & Structure', icon:'🏗️', items:['Visible foundation crack patterns','Step cracking in brickwork','Differential settlement signs','Sub-floor ventilation (if timber floor)','Rising damp indicators at base','Retaining walls — condition and drainage','Basement or undercroft condition','Visible structural beams and columns','Evidence of previous underpinning','Soil condition around perimeter'] },
+  { name:'Garage', icon:'🚗', items:['Garage door operation and balance','Door motor and remote function','Door seals — floor and sides','Garage floor slab — cracks or heaving','Internal access door to house','Garage ventilation','Electrical outlets and lighting','Roof of garage structure','Water or oil staining on floor','Storage area and shelving condition'] },
+  { name:'Kitchen', icon:'🍳', items:['Cabinet door and drawer operation','Cabinet box condition — moisture damage','Countertop joints and sealing','Sink seals and basin drain','Mixer tap operation and leaks','Splash back — grouting and sealing','Extractor fan operation','Plumbing below sink — no active leaks','Geyser / HWC proximity plumbing','Electrical outlet positions (away from water)','Appliance connections — safe and sealed','Floor condition at base of cabinets','Overhead cabinet fixings to wall','Pantry or larder condition','Light fitting above work surfaces'] },
+  { name:'Bathrooms', icon:'🚿', items:['Bath / shower tray condition','Shower screen or curtain rail','All tiling — grouted and sealed','Silicone at bath / shower edges','Basin — condition and fixings','Toilet pan — stable, no movement','Toilet flush mechanism','Cistern — no running or leaking','Bathroom extractor / ventilation','Water pressure at fixtures','Hot water reaching bathroom','Waste pipes — draining freely','Floor drain present and clear','Moisture on walls or ceiling','Mirror cabinet and fittings fixed'] },
+];
+
+const TOTAL = ZONES.reduce((s,z) => s + z.items.length, 0);
+let statuses = {}; // key -> {status, notes}
+let currentZone = 0;
+
+// ── RENDER TABS ──
+function renderTabs() {
+  document.getElementById('zoneTabs').innerHTML = ZONES.map((z,i) => {
+    const zs = zoneStatus(i);
+    return `<button class="zone-tab ${i===0?'active':''} ${zs}" id="zt-${i}" onclick="switchZone(${i})">
+      <span class="zone-dot"></span>${z.icon} ${z.name}
+    </button>`;
+  }).join('');
+}
+
+function zoneStatus(zi) {
+  const z = ZONES[zi];
+  const logged = z.items.filter((_,ii) => statuses[`${zi}-${ii}`]?.status).length;
+  if (!logged) return '';
+  return logged === z.items.length ? 'done' : 'partial';
+}
+
+function switchZone(zi) {
+  currentZone = zi;
+  document.querySelectorAll('.zone-tab').forEach((t,i) => t.classList.toggle('active', i===zi));
+  document.getElementById(`zt-${zi}`)?.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
+  renderZone();
+}
+
+// ── RENDER ZONE ──
+function renderZone() {
+  const z = ZONES[currentZone];
+  document.getElementById('checklistContent').innerHTML = z.items.map((item,ii) => {
+    const key = `${currentZone}-${ii}`;
+    const d = statuses[key] || {};
+    const s = d.status || '';
+    const openNotes = (s==='Fail'||s==='Monitor') || d.notes;
+    const cardCls = s==='Pass'?'has-pass':s==='Fail'?'has-fail':s==='Monitor'?'has-mon':'';
+    return `<div class="item-card ${cardCls}" id="ic-${currentZone}-${ii}">
+      <div class="item-header" onclick="toggleNotes(${currentZone},${ii})">
+        <span class="item-num">${String(ii+1).padStart(2,'0')}</span>
+        <span class="item-name">${item}</span>
+        <span class="item-status-icon">${statusIcon(s)}</span>
+      </div>
+      <div class="status-btns">
+        <button class="sbtn pass ${s==='Pass'?'sel':''}" onclick="setStatus(event,${currentZone},${ii},'Pass')">Pass</button>
+        <button class="sbtn fail ${s==='Fail'?'sel':''}" onclick="setStatus(event,${currentZone},${ii},'Fail')">Fail</button>
+        <button class="sbtn mon  ${s==='Monitor'?'sel':''}" onclick="setStatus(event,${currentZone},${ii},'Monitor')">Mon</button>
+        <button class="sbtn na   ${s==='NA'?'sel':''}" onclick="setStatus(event,${currentZone},${ii},'NA')">N/A</button>
+      </div>
+      <div class="item-notes ${openNotes?'open':''}" id="in-${currentZone}-${ii}">
+        <textarea class="notes-input" rows="2" placeholder="Add notes..."
+          oninput="saveNotes(${currentZone},${ii},this.value)">${d.notes||''}</textarea>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function statusIcon(s) {
+  return {Pass:'<span style="color:var(--pass-lt)">✓</span>',Fail:'<span style="color:var(--fail-lt)">✗</span>',Monitor:'<span style="color:var(--mon-lt)">⚠</span>',NA:'<span style="color:#aaa">—</span>'}[s]||'';
+}
+
+function toggleNotes(zi,ii) {
+  document.getElementById(`in-${zi}-${ii}`)?.classList.toggle('open');
+}
+
+// ── STATUS ──
+function setStatus(e, zi, ii, status) {
+  e.stopPropagation();
+  const key = `${zi}-${ii}`;
+  if (!statuses[key]) statuses[key] = {};
+  statuses[key].status = status;
+
+  // Update card class
+  const card = document.getElementById(`ic-${zi}-${ii}`);
+  if (card) {
+    card.className = 'item-card' + (status==='Pass'?' has-pass':status==='Fail'?' has-fail':status==='Monitor'?' has-mon':'');
+    card.querySelectorAll('.sbtn').forEach(b => {
+      b.classList.remove('sel');
+      if ((b.classList.contains('pass')&&status==='Pass')||(b.classList.contains('fail')&&status==='Fail')||(b.classList.contains('mon')&&status==='Monitor')||(b.classList.contains('na')&&status==='NA')) b.classList.add('sel');
+    });
+    const icon = card.querySelector('.item-status-icon');
+    if (icon) icon.innerHTML = statusIcon(status);
+    // Auto-open notes for fail/monitor
+    if (status==='Fail'||status==='Monitor') {
+      document.getElementById(`in-${zi}-${ii}`)?.classList.add('open');
+    }
+  }
+
+  // Update tab dot
+  const zs = zoneStatus(zi);
+  const tab = document.getElementById(`zt-${zi}`);
+  if (tab) { tab.classList.remove('done','partial'); if(zs) tab.classList.add(zs); }
+
+  updateProgress();
+
+  // Show CTA after 10 items logged
+  const logged = Object.values(statuses).filter(v=>v.status).length;
+  if (logged === 10) setTimeout(openCTA, 600);
+}
+
+function saveNotes(zi, ii, val) {
+  const key = `${zi}-${ii}`;
+  if (!statuses[key]) statuses[key] = {};
+  statuses[key].notes = val;
+}
+
+// ── PROGRESS ──
+function updateProgress() {
+  const logged = Object.values(statuses).filter(v=>v.status).length;
+  const pct = Math.round((logged/TOTAL)*100);
+  document.getElementById('progressFill').style.width = pct+'%';
+  document.getElementById('progressDone').textContent = `${logged} of ${TOTAL} items`;
+  document.getElementById('progressPct').textContent = pct+'%';
+
+  const pass = Object.values(statuses).filter(v=>v.status==='Pass').length;
+  const fail = Object.values(statuses).filter(v=>v.status==='Fail').length;
+  const mon  = Object.values(statuses).filter(v=>v.status==='Monitor').length;
+  document.getElementById('sc-pass').textContent = `✓ ${pass}`;
+  document.getElementById('sc-fail').textContent = `✗ ${fail}`;
+  document.getElementById('sc-mon').textContent  = `⚠ ${mon}`;
+}
+
+// ── CTA ──
+function openCTA() {
+  document.getElementById('ctaOverlay').classList.add('open');
+}
+function closeCTA() {
+  document.getElementById('ctaOverlay').classList.remove('open');
+}
+document.getElementById('ctaOverlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('ctaOverlay')) closeCTA();
+});
+
+// ── BOOT ──
+renderTabs();
+renderZone();
+</script>
+</body>
+</html>
