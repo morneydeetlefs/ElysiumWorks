@@ -1320,6 +1320,12 @@ const ZONES = [
 // Total items
 const TOTAL_ITEMS = ZONES.reduce((s, z) => s + z.items.length, 0);
 
+// ── CLOUD CONFIG ──────────────────────────────────────────────
+// After deploying your Worker, paste its URL here.
+// Format: https://elysium-works-api.YOUR-SUBDOMAIN.workers.dev
+// Leave empty to run fully offline only.
+const WORKER_URL = 'https://elysium-works-api.morneydeetlefs.workers.dev';
+
 // ── STATE ──
 let DB = null;
 let currentProject = null;
@@ -1328,6 +1334,7 @@ let itemStatuses = {};   // { "ZoneName::ItemName": { status, notes, cost, photo
 let photoTargetKey = null;
 let isAuthenticated = false;
 let settings = {};
+let cloudToken = null;   // JWT from Worker auth
 
 // ── INDEXEDDB SETUP ──
 function openDB() {
@@ -1419,6 +1426,98 @@ function hideAuth() {
   isAuthenticated = true;
   document.getElementById('authScreen').style.display = 'none';
   loadHome();
+  // Attempt cloud auth in background (non-blocking)
+  cloudAuth().catch(() => {});
+}
+
+// ── CLOUD SYNC LAYER ──────────────────────────────────────────────────────────
+
+async function cloudAuth() {
+  if (!WORKER_URL) return;
+  // Reuse cached token if still valid
+  const stored = sessionStorage.getItem('ew_cloud_token');
+  if (stored) {
+    try {
+      const { token, exp } = JSON.parse(stored);
+      if (exp > Date.now() / 1000 + 60) { cloudToken = token; return; }
+    } catch {}
+  }
+  // Get PIN from IndexedDB
+  const pinRec = await dbGet('settings', 'pin');
+  const pin = pinRec ? pinRec.value : DEFAULT_PIN;
+
+  const res = await fetch(`${WORKER_URL}/api/auth`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ pin }),
+  });
+  if (!res.ok) return;
+  const { token, exp } = await res.json();
+  cloudToken = token;
+  sessionStorage.setItem('ew_cloud_token', JSON.stringify({ token, exp }));
+}
+
+// Sync all local projects to D1 cloud (called after autosave + on app load)
+async function syncToCloud() {
+  if (!WORKER_URL || !navigator.onLine) return;
+  try {
+    if (!cloudToken) await cloudAuth();
+    if (!cloudToken) return;
+
+    const projects = await dbGetAll('projects');
+    if (!projects.length) return;
+
+    // Strip base64 photos before sending — they'll go to B2 separately later
+    const payload = projects.map(p => {
+      const strippedItems = {};
+      for (const [key, val] of Object.entries(p.items || {})) {
+        strippedItems[key] = { ...val, photos: (val.photos || []).map(() => '[photo]') };
+      }
+      return { ...p, items: strippedItems };
+    });
+
+    const res = await fetch(`${WORKER_URL}/api/sync`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${cloudToken}`,
+      },
+      body: JSON.stringify({ projects: payload }),
+    });
+
+    if (res.ok) {
+      updateSyncIndicator('synced');
+    } else if (res.status === 401) {
+      cloudToken = null;
+      sessionStorage.removeItem('ew_cloud_token');
+    }
+  } catch {
+    // Offline or Worker down — silent fail, IndexedDB keeps data safe
+  }
+}
+
+function updateSyncIndicator(state) {
+  const dot = document.getElementById('syncDot');
+  if (state === 'synced') {
+    dot.classList.add('online');
+    dot.title = 'Synced to cloud';
+  } else if (state === 'syncing') {
+    dot.classList.add('syncing');
+    dot.title = 'Syncing...';
+  }
+}
+
+// Delete from cloud too
+async function cloudDelete(projectId) {
+  if (!WORKER_URL || !navigator.onLine) return;
+  try {
+    if (!cloudToken) await cloudAuth();
+    if (!cloudToken) return;
+    await fetch(`${WORKER_URL}/api/projects/${projectId}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${cloudToken}` },
+    });
+  } catch {}
 }
 
 function doLogout() {
@@ -1462,12 +1561,16 @@ function updateOnlineStatus() {
     dot.title = 'Offline — data saved locally';
   }
 }
-window.addEventListener('online', updateOnlineStatus);
+window.addEventListener('online', () => {
+  updateOnlineStatus();
+  syncToCloud().catch(() => {});   // push any queued changes when signal returns
+});
 window.addEventListener('offline', updateOnlineStatus);
 
 // ── HOME ──
 async function loadHome() {
   updateOnlineStatus();
+  syncToCloud().catch(() => {});   // sync on every home screen load
   const projects = await dbGetAll('projects');
   document.getElementById('statTotal').textContent = projects.length;
   document.getElementById('statDraft').textContent = projects.filter(p => p.status === 'Draft').length;
@@ -1821,6 +1924,8 @@ async function autoSave() {
   const total = Object.values(itemStatuses).reduce((s, v) => s + (v.cost || 0), 0);
   currentProject.total_cost = total;
   await dbPut('projects', currentProject);
+  // Background cloud sync (non-blocking)
+  syncToCloud().catch(() => {});
 }
 
 // ── SUMMARY / REPORT ──
@@ -2210,6 +2315,7 @@ function confirmDelete(projectId) {
   document.getElementById('confirmMsg').textContent = 'This cannot be undone. All checklist data and photos for this project will be permanently deleted.';
   document.getElementById('confirmBtn').onclick = async () => {
     await dbDelete('projects', projectId);
+    cloudDelete(projectId).catch(() => {});   // also remove from D1
     closeModal('confirmModal');
     showToast('Inspection deleted', 'info');
     loadAllProjects();
