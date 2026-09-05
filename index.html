@@ -874,7 +874,7 @@
         <span class="form-note">No commitment — just a conversation</span>
       </div>
       <div class="form-confirm" id="form-confirm">
-        <i class="ti ti-circle-check" aria-hidden="true"></i> Got it! I'll be in touch soon. Thanks for reaching out to Elysium Works.
+        <i class="ti ti-circle-check" aria-hidden="true"></i> WhatsApp is opening with your details pre-filled — just hit send. I'll get back to you soon.
       </div>
     </div>
   </div>
@@ -925,15 +925,44 @@ function updateEstimate() {
   box.classList.add('show');
 }
 function submitForm() {
-  const name = document.getElementById('f-name');
-  const phone = document.getElementById('f-phone');
+  const nameEl  = document.getElementById('f-name');
+  const phoneEl = document.getElementById('f-phone');
+  const areaEl  = document.getElementById('f-area');
+  const jobEl   = document.getElementById('f-job');
+
+  // Validate required fields
   let valid = true;
-  [name, phone].forEach(f => { if (!f.value.trim()) { f.classList.add('err'); valid = false; } else f.classList.remove('err'); });
+  [nameEl, phoneEl].forEach(f => {
+    if (!f.value.trim()) { f.classList.add('err'); valid = false; }
+    else f.classList.remove('err');
+  });
   if (!valid) return;
+
+  // Build WhatsApp message
+  const name  = nameEl.value.trim();
+  const phone = phoneEl.value.trim();
+  const area  = areaEl.value;
+  const job   = jobEl.value;
+
+  const msg = `Hi Morney 👋 I'd like to book a job with Elysium Works.
+
+*Name:* ${name}
+*My number:* ${phone}
+*Area:* ${area}
+*Job type:* ${job}
+
+Please get back to me when you can. Thanks!`;
+
+  const waURL = `https://wa.me/27718181132?text=${encodeURIComponent(msg)}`;
+
+  // Show confirmation on page
   document.querySelector('.form-submit').style.display = 'none';
   document.querySelector('.form-grid').style.opacity = '0.4';
   document.querySelector('.form-grid').style.pointerEvents = 'none';
   document.getElementById('form-confirm').classList.add('show');
+
+  // Open WhatsApp (slight delay so confirmation shows first)
+  setTimeout(() => { window.open(waURL, '_blank'); }, 400);
 }
 </script>
 </body>
