@@ -313,113 +313,154 @@
   footer { background: var(--brand-dark); color: rgba(255,255,255,0.45); text-align: center; padding: 1rem 1.5rem; font-size: 12px; }
   footer span { color: #A8D4B8; }
 
-  /* ══ MOBILE RESPONSIVE ══════════════════════════════════════ */
-  @media (max-width: 600px) {
-
-    /* Nav — hide text links, keep CTA */
-    nav { padding: 0 1rem; height: 54px; }
-    .nav-links { display: none; }
-    .nav-brand { font-size: 17px; }
-    .nav-cta { padding: 7px 14px; font-size: 13px; }
-    .nav-link-app {
-      font-size: 12px; padding: 5px 10px;
-    }
-
-    /* Hero */
-    .hero { padding: 2rem 1.25rem 2.5rem; }
-    .hero h1 { font-size: 28px; letter-spacing: -0.02em; }
-    .hero p { font-size: 14px; margin-bottom: 1.5rem; }
-    .hero-btns { flex-direction: column; align-items: stretch; gap: 8px; }
-    .btn-primary, .btn-ghost { width: 100%; padding: 13px 20px; font-size: 15px; }
-
-    /* Hero chips — horizontal scroll instead of wrap */
-    .hero-chips {
-      flex-wrap: nowrap;
-      overflow-x: auto;
-      justify-content: flex-start;
-      -webkit-overflow-scrolling: touch;
-      padding-bottom: 4px;
-      margin-left: -1.25rem;
-      margin-right: -1.25rem;
-      padding-left: 1.25rem;
-      padding-right: 1.25rem;
-    }
-    .hero-chips::-webkit-scrollbar { display: none; }
-    .chip { flex-shrink: 0; }
-
-    /* Services tabs */
-    .tabs-inner { padding: 0 1rem; }
-    .tab-btn { padding: 0.8rem 0.75rem; font-size: 12px; }
-    .tab-content { padding: 1.25rem 0 1.5rem; }
-
-    /* Service cards — single column */
-    .card-grid { grid-template-columns: 1fr; gap: 0.75rem; }
-    .svc-card { padding: 1.1rem; }
-
-    /* Callout calculator */
-    .calc-wrap { padding: 1.5rem 1rem; }
-    .calc-header { padding: 1rem 1.25rem; }
-    .calc-header i { font-size: 18px; }
-    .calc-header-text h3 { font-size: 16px; }
-    .calc-body { padding: 1.25rem 1rem; }
-    .calc-row { grid-template-columns: 1fr; gap: 0.75rem; }
-
-    /* Zone rows — stack area and fee */
-    .zone-row { flex-wrap: wrap; gap: 6px; padding: 10px 12px; }
-    .zone-name { flex: 1 1 100%; font-size: 14px; }
-    .zone-area { font-size: 11px; flex: 1; }
-    .zone-fee { font-size: 13px; }
-
-    /* Result box */
-    .result-top { flex-direction: column; gap: 0.75rem; }
-    .result-big { font-size: 22px; }
-
-    /* About */
-    .about-wrap { padding: 0 1rem 2rem; }
-    .about-card { flex-direction: column; gap: 1.25rem; padding: 1.25rem; }
-    .avatar-col { display: flex; align-items: center; gap: 1rem; text-align: left; }
-    .avatar { width: 64px; height: 64px; font-size: 22px; margin: 0; }
-    .avail { justify-content: flex-start; }
-    .about-body h2 { font-size: 19px; }
-
-    /* Guides */
-    .guides-wrap { padding: 2rem 1rem; }
-    .guide-grid { grid-template-columns: 1fr; }
-
-    /* Contact */
-    .contact-wrap { padding: 1.5rem 1rem; }
-    .form-grid { grid-template-columns: 1fr; }
-    .contact-top { grid-template-columns: 1fr 1fr; gap: 0.75rem; padding: 1.25rem 1rem; }
-
-    /* Show a mobile nav menu instead */
-    .mobile-nav-menu {
-      display: flex;
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-      background: rgba(0,0,0,0.25);
-      padding: 0 1rem;
-    }
-    .mobile-nav-menu::-webkit-scrollbar { display: none; }
-    .mobile-nav-menu .nav-link {
-      font-size: 12px; padding: 6px 10px; white-space: nowrap; flex-shrink: 0;
-    }
-    .mobile-nav-menu .nav-link-app { font-size: 12px; padding: 5px 10px; white-space: nowrap; flex-shrink: 0; }
-  }
-
-  /* Mobile nav secondary bar (shown only on mobile) */
+  /* ══ MOBILE NAV BAR (secondary, mobile-only) ═══════════════ */
   .mobile-nav-bar {
     display: none;
     background: var(--brand-dark);
     border-top: 1px solid rgba(255,255,255,0.08);
-    padding: 4px 1rem;
+    padding: 2px 0.75rem;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     gap: 2px;
+    position: sticky; top: 54px; z-index: 99;
   }
   .mobile-nav-bar::-webkit-scrollbar { display: none; }
+  .mobile-nav-bar .nav-link { font-size: 13px; padding: 8px 10px; white-space: nowrap; flex-shrink: 0; color: rgba(255,255,255,0.75); }
+  .mobile-nav-bar .nav-link-app { font-size: 12px; padding: 6px 10px; white-space: nowrap; flex-shrink: 0; margin-left: 2px; }
+
+  /* ══ MOBILE: ≤ 600px ════════════════════════════════════════ */
   @media (max-width: 600px) {
-    .mobile-nav-bar { display: flex; }
+
+    /* Global */
+    body { font-size: 15px; }
+
+    /* ── Nav ── */
+    nav { padding: 0 1rem; height: 54px; }
     .nav-links { display: none; }
+    .nav-brand { font-size: 18px; }
+    .nav-cta { padding: 8px 14px; font-size: 14px; }
+    .mobile-nav-bar { display: flex; }
+
+    /* ── Hero ── */
+    .hero { padding: 1.75rem 1.25rem 3rem; }
+    .hero-location { font-size: 13px; padding: 6px 14px; margin-bottom: 1rem; }
+    .hero h1 { font-size: 30px; line-height: 1.1; letter-spacing: -0.02em; }
+    .hero p { font-size: 15px; margin-bottom: 1.5rem; line-height: 1.65; }
+    .hero-btns { flex-direction: column; align-items: stretch; gap: 10px; }
+    .btn-primary { width: 100%; padding: 15px 20px; font-size: 16px; }
+    .btn-ghost   { width: 100%; padding: 14px 20px; font-size: 15px; }
+
+    /* Chips — scroll horizontally, no wrapping */
+    .hero-chips {
+      flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start;
+      -webkit-overflow-scrolling: touch;
+      margin: 0 -1.25rem; padding: 1.5rem 1.25rem 0.5rem;
+      border-top: 1px solid rgba(255,255,255,0.1);
+      gap: 8px;
+    }
+    .hero-chips::-webkit-scrollbar { display: none; }
+    .chip { flex-shrink: 0; font-size: 13px; padding: 6px 14px; }
+
+    /* ── Services tabs ── */
+    .tabs-inner { padding: 0; }
+    .tab-bar { padding: 0 1rem; }
+    .tab-btn { padding: 0.85rem 0.85rem; font-size: 14px; }
+    .tab-content { padding: 1rem 1rem 1.5rem; }
+
+    /* Service cards — single column, readable size */
+    .card-grid { grid-template-columns: 1fr; gap: 0.85rem; }
+    .svc-card { padding: 1.2rem; }
+    .svc-card h3 { font-size: 16px; }
+    .svc-card p  { font-size: 14px; line-height: 1.65; }
+    .price-from  { font-size: 15px; }
+    .price-note  { font-size: 13px; }
+    .ex-tag      { font-size: 12px; padding: 3px 9px; }
+
+    /* ── Callout calculator ── */
+    .calc-wrap { padding: 1.5rem 1rem; }
+    .calc-header { padding: 1rem 1.25rem; gap: 10px; }
+    .calc-header i { font-size: 20px; }
+    .calc-header-text h3 { font-size: 17px; }
+    .calc-header-text p  { font-size: 13px; }
+    .calc-body { padding: 1.25rem 1rem; }
+
+    /* Job type + size — full width, stacked */
+    .calc-row { grid-template-columns: 1fr; gap: 0.75rem; }
+    .field label { font-size: 13px; }
+    .field select, .field input { font-size: 15px; padding: 11px 12px; }
+
+    /* Zone rows — name full width, area + fee on second line */
+    .zone-map-label { font-size: 13px; }
+    .zone-row { flex-wrap: wrap; row-gap: 3px; padding: 11px 12px; }
+    .zone-dot { align-self: center; }
+    .zone-name { flex: 1 1 calc(100% - 20px); font-size: 15px; font-weight: 600; }
+    .zone-area { flex: 1; font-size: 12px; color: var(--text-soft); padding-left: 20px; }
+    .zone-fee  { font-size: 14px; font-weight: 700; }
+
+    /* Result box */
+    .result-box { padding: 1rem; }
+    .result-top { flex-direction: column; gap: 0.6rem; }
+    .result-big { font-size: 24px; }
+    .result-section h4 { font-size: 12px; }
+    .result-sub { font-size: 13px; }
+    .breakdown-row { font-size: 14px; }
+    .result-note { font-size: 13px; }
+    .btn-get-quote { width: 100%; padding: 13px; font-size: 15px; }
+
+    /* ── About ── */
+    .about-wrap { padding: 0 1rem 2rem; }
+    .about-card { flex-direction: column; gap: 1rem; padding: 1.25rem; }
+    .avatar-col { display: flex; align-items: center; gap: 1rem; text-align: left; width: 100%; }
+    .avatar { width: 60px; height: 60px; font-size: 20px; margin: 0; flex-shrink: 0; }
+    .avail { justify-content: flex-start; font-size: 12px; }
+    .about-body h2 { font-size: 20px; }
+    .about-role { font-size: 14px; }
+    .about-body p { font-size: 14px; line-height: 1.7; }
+    .honest { font-size: 14px; }
+    .pill { font-size: 13px; padding: 4px 12px; }
+
+    /* ── Guides ── */
+    .guides-wrap { padding: 2rem 1rem; }
+    .guides-inner h2 { font-size: 22px; }
+    .guides-inner .sub { font-size: 14px; }
+    .guide-grid { grid-template-columns: 1fr; gap: 0.85rem; }
+    .guide-card { padding: 1.25rem; }
+    .guide-card h3 { font-size: 15px; line-height: 1.4; }
+    .guide-card p  { font-size: 13px; }
+    .guide-price   { font-size: 22px; }
+    .btn-guide, .btn-guide-app { width: 100%; padding: 11px; font-size: 14px; text-align: center; }
+
+    /* ── Contact ── */
+    .contact-wrap { padding: 1.5rem 1rem; }
+
+    /* Contact info — 2 col grid (WhatsApp, Phone, Email, Area) */
+    .contact-top { grid-template-columns: 1fr 1fr; gap: 0.75rem; padding: 1.25rem 1rem; }
+    .ct-item i { font-size: 20px; }
+    .ct-item .ct-lbl { font-size: 12px; }
+    .ct-item .ct-val { font-size: 14px; }
+    .ct-item .ct-val a { color: #fff; }
+
+    /* Form — single column */
+    .contact-form { padding: 1.25rem 1rem; }
+    .contact-form h3 { font-size: 20px; }
+    .contact-form .sub { font-size: 14px; margin-bottom: 1rem; }
+    .form-grid { grid-template-columns: 1fr; gap: 0.75rem; }
+    .form-grid .field label { font-size: 13px; }
+    .form-grid .field input,
+    .form-grid .field select { font-size: 15px; padding: 11px 12px; }
+    .btn-submit { width: 100%; padding: 14px; font-size: 16px; }
+    .form-note { font-size: 13px; width: 100%; }
+    .form-submit { flex-direction: column; gap: 0.6rem; }
+
+    /* ── Footer ── */
+    footer { font-size: 13px; padding: 1rem; line-height: 1.6; }
+  }
+
+  /* ══ VERY SMALL: ≤ 380px (older/cheaper phones) ══════════ */
+  @media (max-width: 380px) {
+    .hero h1 { font-size: 26px; }
+    .tab-btn { font-size: 13px; padding: 0.75rem 0.7rem; }
+    .contact-top { grid-template-columns: 1fr; }
   }
 </style>
 
@@ -433,6 +474,8 @@
     <button class="nav-link" onclick="goTo('about-wrap')">About</button>
     <button class="nav-link" onclick="goTo('guides-wrap')">Guides</button>
     <a class="nav-link-app" href="/demo">Try Demo ↗</a>
+  </div>
+  <button class="nav-cta" onclick="goTo('contact-wrap')">Book a job</button>
 </nav>
 
 <!-- Mobile-only secondary nav bar -->
