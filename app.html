@@ -4,25 +4,33 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
 <meta name="theme-color" content="#0a0906"/>
+<meta name="mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="apple-mobile-web-app-title" content="EW Inspect"/>
 <title>Elysium Works — Inspection App</title>
 
-<!-- PWA Manifest inline (no separate file needed for Pages deployment) -->
+<!-- PWA Manifest -->
 <script>
-const MANIFEST = {
-  name: "Elysium Works Inspection",
-  short_name: "EW Inspect",
-  start_url: "/app",
-  display: "standalone",
-  background_color: "#0a0906",
-  theme_color: "#0a0906",
-  icons: [{ src: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' fill='%230a0906'/><text y='140' font-size='120' text-anchor='middle' x='96'>✦</text></svg>", sizes: "192x192", type: "image/svg+xml" }]
-};
-const blob = new Blob([JSON.stringify(MANIFEST)], {type: 'application/json'});
-const manifestURL = URL.createObjectURL(blob);
-document.write(`<link rel="manifest" href="${manifestURL}"/>`);
+window.addEventListener('DOMContentLoaded', function() {
+  const MANIFEST = {
+    name: "Elysium Works Inspection",
+    short_name: "EW Inspect",
+    start_url: "/app.html",
+    display: "standalone",
+    background_color: "#0a0906",
+    theme_color: "#0a0906",
+    icons: [{
+      src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' fill='%230a0906'/%3E%3Ctext y='140' font-size='120' text-anchor='middle' x='96'%3E%E2%9C%A6%3C/text%3E%3C/svg%3E",
+      sizes: "192x192", type: "image/svg+xml"
+    }]
+  };
+  const blob = new Blob([JSON.stringify(MANIFEST)], {type: 'application/json'});
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('link');
+  link.rel = 'manifest'; link.href = url;
+  document.head.appendChild(link);
+});
 </script>
 
 <!-- Fonts -->
@@ -3433,6 +3441,8 @@ document.getElementById('photo-capture').addEventListener('change', async functi
 });
 
 
+// ── BOOT ──
+async function boot() {
   DB = await openDB();
   await initAuth();
 }
