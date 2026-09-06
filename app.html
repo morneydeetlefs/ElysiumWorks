@@ -2634,11 +2634,11 @@ async function generatePDF() {
     checkPage(16);
 
     // Zone header
-    doc.setFillColor(...hexToRGB('#211c14'));
+    doc.setFillColor(...hexToRGB('#264736'));
     doc.rect(MARGIN, y, CONTENT_W, 9, 'F');
-    doc.setDrawColor(...hexToRGB('#7a5815'));
+    doc.setDrawColor(...hexToRGB('#3A6B4F'));
     doc.rect(MARGIN, y, 3, 9, 'F');
-    doc.setTextColor(...hexToRGB('#e8c87a'));
+    doc.setTextColor(255, 255, 255);
     doc.setFontSize(8.5);
     doc.setFont('helvetica', 'bold');
     doc.text(zone.name.toUpperCase(), MARGIN + 6, y + 6.2);
@@ -2657,22 +2657,29 @@ async function generatePDF() {
       doc.setFillColor(...hexToRGB(statusColor));
       doc.circle(MARGIN + 2, y + 2.5, 1.5, 'F');
 
-      doc.setTextColor(...hexToRGB('#f0e6ce'));
-      doc.setFontSize(8);
+      // White row background
+      doc.setFillColor(255, 255, 255);
+      doc.rect(MARGIN, y, CONTENT_W, lines.length * 5 + 3, 'F');
+
+      // Item name — dark, readable
+      doc.setTextColor(30, 30, 30);
+      doc.setFontSize(8.5);
       doc.setFont('helvetica', 'normal');
       const lines = doc.splitTextToSize(item, CONTENT_W - 28);
       doc.text(lines, MARGIN + 6, y + 4);
 
-      // Status label
-      doc.setTextColor(...hexToRGB(statusColor));
-      doc.setFontSize(6.5);
-      doc.setFont('helvetica', 'bold');
+      // Status label — coloured but on white so readable
+      const statusPrintColors = {
+        Pass: '#1e5c38', Fail: '#8b1a1a', Monitor: '#7a4a00', NA: '#555555'
+      };
+      doc.setTextColor(...hexToRGB(statusPrintColors[data.status] || '#555555'));
+      doc.setFontSize(7); doc.setFont('helvetica', 'bold');
       doc.text(data.status, PAGE_W - MARGIN - 2, y + 4, { align: 'right' });
 
-      // Cost
+      // Cost — dark green
       if (data.cost) {
-        doc.setTextColor(...hexToRGB('#c9943c'));
-        doc.setFontSize(7);
+        doc.setTextColor(...hexToRGB('#1e5c38'));
+        doc.setFontSize(7); doc.setFont('helvetica', 'bold');
         doc.text(`R ${data.cost.toLocaleString('en-ZA')}`, PAGE_W - MARGIN - 20, y + 4, { align: 'right' });
       }
 
@@ -2681,8 +2688,8 @@ async function generatePDF() {
       // Notes
       if (data.notes && data.notes.trim()) {
         checkPage(8);
-        doc.setTextColor(...hexToRGB('#7a6d58'));
-        doc.setFontSize(7);
+        doc.setTextColor(90, 80, 70);
+        doc.setFontSize(7.5);
         doc.setFont('helvetica', 'italic');
         const noteLines = doc.splitTextToSize(data.notes, CONTENT_W - 14);
         doc.text(noteLines, MARGIN + 8, y + 3);
@@ -2706,7 +2713,7 @@ async function generatePDF() {
       }
 
       // Separator
-      doc.setDrawColor(...hexToRGB('#2c2619'));
+      doc.setDrawColor(220, 220, 215);
       doc.line(MARGIN + 6, y, PAGE_W - MARGIN, y);
       y += 3;
     }
@@ -3346,22 +3353,28 @@ async function generateQuotePDF(isInvoice) {
   // Line items table
   const addSection = (title, lines) => {
     if (!lines.length) return;
-    doc.setFillColor(...hex('#211c14')); doc.rect(M,y,W-M*2,8,'F');
-    doc.setDrawColor(...hex('#7a5815')); doc.rect(M,y,3,8,'F');
-    doc.setTextColor(...hex('#e8c87a')); doc.setFontSize(7.5); doc.setFont('helvetica','bold');
+    // Section header — keep dark brand style
+    doc.setFillColor(...hex('#264736')); doc.rect(M,y,W-M*2,8,'F');
+    doc.setDrawColor(...hex('#3A6B4F')); doc.rect(M,y,3,8,'F');
+    doc.setTextColor(255,255,255); doc.setFontSize(7.5); doc.setFont('helvetica','bold');
     doc.text(title, M+6, y+5.5);
-    y += 12;
+    y += 10;
     lines.forEach(l => {
-      doc.setTextColor(...hex('#f0e6ce')); doc.setFontSize(8.5); doc.setFont('helvetica','normal');
-      const descLines = doc.splitTextToSize(l.desc||title, W-M*2-30);
-      doc.text(descLines, M+4, y+4);
-      doc.setTextColor(...hex('#c9943c')); doc.setFont('helvetica','bold');
-      doc.text(`R ${(parseFloat(l.amount)||0).toLocaleString('en-ZA')}`, W-M-2, y+4, {align:'right'});
-      doc.setDrawColor(...hex('#2c2619'));
-      doc.line(M, y+8, W-M, y+8);
-      y += descLines.length*5 + 4;
+      // White row background
+      doc.setFillColor(255,255,255); doc.rect(M, y, W-M*2, 9, 'F');
+      // Description — dark, readable
+      doc.setTextColor(30,30,30); doc.setFontSize(9); doc.setFont('helvetica','normal');
+      const descLines = doc.splitTextToSize(l.desc||title, W-M*2-35);
+      doc.text(descLines, M+4, y+6);
+      // Amount — dark green, bold
+      doc.setTextColor(...hex('#1e5c38')); doc.setFont('helvetica','bold'); doc.setFontSize(9);
+      doc.text(`R ${(parseFloat(l.amount)||0).toLocaleString('en-ZA')}`, W-M-2, y+6, {align:'right'});
+      // Separator line
+      doc.setDrawColor(220,220,215);
+      doc.line(M, y+9, W-M, y+9);
+      y += descLines.length*5 + 5;
     });
-    y += 2;
+    y += 3;
   };
 
   addSection('CALLOUT FEE', [{ desc:`Callout — ${client.area||'local'}`, amount: callout }]);
