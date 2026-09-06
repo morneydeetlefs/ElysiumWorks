@@ -764,7 +764,7 @@
           <div class="breakdown-row"><span class="bl">Parts / materials</span><span class="bv">Quoted separately</span></div>
         </div>
         <div class="result-note">Estimate only — final price confirmed after I've seen the job. No surprises.</div>
-        <button class="btn-get-quote" onclick="goTo('contact-wrap')">Book this job ↗</button>
+        <button class="btn-get-quote" onclick="bookThisJob()">Book this job ↗</button>
       </div>
     </div>
   </div>
@@ -864,8 +864,16 @@
         <div class="field">
           <label>Type of job</label>
           <select id="f-job">
-            <option>Appliance repair</option><option>Handyman work</option>
-            <option>Patio / building</option><option>Home inspection</option><option>Not sure yet</option>
+            <option value="Appliance repair">Appliance repair</option>
+            <option value="Handyman — small job">Handyman — small job</option>
+            <option value="Handyman — full day">Handyman — full day</option>
+            <option value="Plumbing fix">Plumbing fix</option>
+            <option value="New patio">New patio</option>
+            <option value="Patio enclosure">Patio enclosure</option>
+            <option value="Renovation / addition">Renovation / addition</option>
+            <option value="Home inspection">Home inspection</option>
+            <option value="Problem diagnosis">Problem diagnosis</option>
+            <option value="Not sure yet">Not sure yet</option>
           </select>
         </div>
       </div>
@@ -901,6 +909,57 @@ const labour = {
   inspection:       { s:[800,1000],   m:[1000,1400],  l:[1400,2000] },
   diagnosis:        { s:[500,700],    m:[700,1000],   l:[1000,1500] },
 };
+// Map calculator keys → form display values
+const JOB_LABEL_MAP = {
+  'appliance':      'Appliance repair',
+  'handyman-small': 'Handyman — small job',
+  'handyman-day':   'Handyman — full day',
+  'plumbing':       'Plumbing fix',
+  'patio':          'New patio',
+  'enclosure':      'Patio enclosure',
+  'renovation':     'Renovation / addition',
+  'inspection':     'Home inspection',
+  'diagnosis':      'Problem diagnosis',
+};
+
+function bookThisJob() {
+  // Pre-fill area from calculator selection
+  const areaEl = document.getElementById('f-area');
+  if (areaEl && currentZoneName) {
+    for (let i = 0; i < areaEl.options.length; i++) {
+      if (areaEl.options[i].value === currentZoneName || areaEl.options[i].text === currentZoneName) {
+        areaEl.selectedIndex = i; break;
+      }
+    }
+  }
+
+  // Pre-fill job type from calculator selection
+  const calcType = document.getElementById('job-type').value;
+  const jobEl = document.getElementById('f-job');
+  if (jobEl && calcType && JOB_LABEL_MAP[calcType]) {
+    const label = JOB_LABEL_MAP[calcType];
+    for (let i = 0; i < jobEl.options.length; i++) {
+      if (jobEl.options[i].value === label || jobEl.options[i].text === label) {
+        jobEl.selectedIndex = i; break;
+      }
+    }
+  }
+
+  // Scroll to form and briefly highlight the pre-filled fields
+  goTo('contact-wrap');
+  setTimeout(() => {
+    [areaEl, jobEl].forEach(el => {
+      if (!el) return;
+      el.style.transition = 'border-color .3s';
+      el.style.borderColor = 'var(--brand)';
+      setTimeout(() => { el.style.borderColor = ''; }, 1800);
+    });
+    // Focus name field so they know what to fill in next
+    const nameEl = document.getElementById('f-name');
+    if (nameEl && !nameEl.value) setTimeout(() => nameEl.focus(), 400);
+  }, 600);
+}
+
 let currentCallout = 50;
 let currentZoneName = 'Elysium / Ifafa';
 function selectZone(el, name, fee) {
@@ -930,7 +989,6 @@ function submitForm() {
   const areaEl  = document.getElementById('f-area');
   const jobEl   = document.getElementById('f-job');
 
-  // Validate required fields
   let valid = true;
   [nameEl, phoneEl].forEach(f => {
     if (!f.value.trim()) { f.classList.add('err'); valid = false; }
@@ -938,31 +996,20 @@ function submitForm() {
   });
   if (!valid) return;
 
-  // Build WhatsApp message
-  const name  = nameEl.value.trim();
-  const phone = phoneEl.value.trim();
-  const area  = areaEl.value;
-  const job   = jobEl.value;
+  const name     = nameEl.value.trim();
+  const phone    = phoneEl.value.trim();
+  const area     = areaEl.value;
+  const job_type = jobEl.value;
 
-  const msg = `Hi Morney 👋 I'd like to book a job with Elysium Works.
+  // Build WhatsApp message with all details
+  const msg = `Hi Morney 👋 I'd like to book a job with Elysium Works.\n\n*Name:* ${name}\n*My number:* ${phone}\n*Area:* ${area}\n*Job type:* ${job_type}\n\nPlease get back to me when you can. Thanks!`;
+  setTimeout(() => { window.open(`https://wa.me/27718181132?text=${encodeURIComponent(msg)}`, '_blank'); }, 400);
 
-*Name:* ${name}
-*My number:* ${phone}
-*Area:* ${area}
-*Job type:* ${job}
-
-Please get back to me when you can. Thanks!`;
-
-  const waURL = `https://wa.me/27718181132?text=${encodeURIComponent(msg)}`;
-
-  // Show confirmation on page
+  // Show confirmation
   document.querySelector('.form-submit').style.display = 'none';
   document.querySelector('.form-grid').style.opacity = '0.4';
   document.querySelector('.form-grid').style.pointerEvents = 'none';
   document.getElementById('form-confirm').classList.add('show');
-
-  // Open WhatsApp (slight delay so confirmation shows first)
-  setTimeout(() => { window.open(waURL, '_blank'); }, 400);
 }
 </script>
 </body>
