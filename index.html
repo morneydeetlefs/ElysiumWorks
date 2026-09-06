@@ -1001,15 +1001,23 @@ function submitForm() {
   const area     = areaEl.value;
   const job_type = jobEl.value;
 
-  // Build WhatsApp message with all details
+  // 1. Open WhatsApp — primary action, always fires
   const msg = `Hi Morney 👋 I'd like to book a job with Elysium Works.\n\n*Name:* ${name}\n*My number:* ${phone}\n*Area:* ${area}\n*Job type:* ${job_type}\n\nPlease get back to me when you can. Thanks!`;
   setTimeout(() => { window.open(`https://wa.me/27718181132?text=${encodeURIComponent(msg)}`, '_blank'); }, 400);
 
-  // Show confirmation
+  // 2. Show confirmation on page
   document.querySelector('.form-submit').style.display = 'none';
   document.querySelector('.form-grid').style.opacity = '0.4';
   document.querySelector('.form-grid').style.pointerEvents = 'none';
   document.getElementById('form-confirm').classList.add('show');
+
+  // 3. Fire-and-forget to Worker — saves enquiry to D1 for CRM import
+  // Prospect is at home on wifi — no offline handling needed here
+  fetch('https://elysium-works-api.morneydeetlefs.workers.dev/api/enquiry', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, phone, area, job_type, source: 'Website booking form' }),
+  }).catch(() => {}); // Silent fail — WhatsApp is the safety net
 }
 </script>
 </body>

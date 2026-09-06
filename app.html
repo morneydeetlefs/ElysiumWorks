@@ -1879,8 +1879,9 @@ function hideAuth() {
   isAuthenticated = true;
   document.getElementById('authScreen').style.display = 'none';
   loadHome();
-  // Attempt cloud auth in background (non-blocking)
   cloudAuth().catch(() => {});
+  // Check for new website enquiries 3 seconds after login
+  setTimeout(() => checkNewEnquiries().catch(() => {}), 3000);
 }
 
 // ── CLOUD SYNC LAYER ──────────────────────────────────────────────────────────
@@ -2076,6 +2077,11 @@ function openModal(id) {
 
 function closeModal(id) {
   document.getElementById(id).classList.remove('open');
+  // Reset confirm modal if it was repurposed for enquiry review
+  if (id === 'confirmModal') {
+    const btn = document.getElementById('confirmBtn');
+    if (btn) btn.style.display = '';
+  }
 }
 
 async function createProject() {
@@ -2882,7 +2888,12 @@ self.addEventListener('fetch', e => {
 // Close modals on overlay click
 document.querySelectorAll('.modal-overlay').forEach(overlay => {
   overlay.addEventListener('click', e => {
-    if (e.target === overlay) overlay.classList.remove('open');
+    if (e.target === overlay) {
+      overlay.classList.remove('open');
+      // Reset confirm modal state if it was used for enquiry review
+      const btn = document.getElementById('confirmBtn');
+      if (btn) btn.style.display = '';
+    }
   });
 });
 
@@ -3462,6 +3473,146 @@ document.getElementById('photo-capture').addEventListener('change', async functi
 async function boot() {
   DB = await openDB();
   await initAuth();
+}
+
+// ── CHECK FOR NEW ENQUIRIES (owner side) ─────────────────────────────────────
+// Runs after login. Checks D1 for unimported website enquiries.
+// Shows a notification — owner decides whether to accept each one.
+async function checkNewEnquiries() {
+  if (!WORKER_URL || !navigator.onLine) return;
+  try {
+    if (!cloudToken) await cloudAuth();
+    if (!cloudToken) return;
+
+    const res = await fetch(`${WORKER_URL}/api/enquiries`, {
+      headers: { 'Authorization': `Bearer ${cloudToken}` },
+    });
+    if (!res.ok) return;
+
+    const { enquiries } = await res.json();
+    if (!enquiries || !enquiries.length) return;
+
+    // Show notification on home screen
+    showEnquiryNotification(enquiries);
+  } catch (e) {}
+}
+
+function showEnquiryNotification(enquiries) {
+  const count = enquiries.length;
+  const existing = document.getElementById('enquiry-notif');
+  if (existing) existing.remove();
+
+  const notif = document.createElement('div');
+  notif.id = 'enquiry-notif';
+  notif.style.cssText = `
+    background: var(--md-gold-dk); border: 1px solid var(--md-gold);
+    border-radius: var(--md-radius-lg); padding: 1rem 1.1rem;
+    margin-bottom: .75rem; cursor: pointer;
+    display: flex; align-items: center; gap: .75rem;
+  `;
+  notif.innerHTML = `
+    <div style="font-size:1.4rem;flex-shrink:0">📥</div>
+    <div style="flex:1">
+      <div style="font-family:'Syne',sans-serif;font-size:.9rem;font-weight:600;color:var(--md-black)">
+        ${count} new website enquir${count > 1 ? 'ies' : 'y'}
+      </div>
+      <div style="font-size:.75rem;color:rgba(0,0,0,.6);margin-top:.15rem">
+        Tap to review and add to your pipeline
+      </div>
+    </div>
+    <div style="color:rgba(0,0,0,.5);font-size:1rem">›</div>
+  `;
+  notif.onclick = () => showEnquiryReview(enquiries);
+
+  // Insert above the project list
+  const list = document.getElementById('projectList');
+  if (list) list.parentNode.insertBefore(notif, list);
+}
+
+function showEnquiryReview(enquiries) {
+  // Build a review modal showing each enquiry
+  const content = enquiries.map(eq => `
+    <div style="background:var(--md-surface);border:1px solid var(--md-border);border-radius:var(--md-radius-lg);padding:1rem;margin-bottom:.6rem">
+      <div style="font-family:'Syne',sans-serif;font-size:.9rem;font-weight:600;color:var(--md-cream)">${eq.name}</div>
+      <div style="font-size:.78rem;color:var(--md-gold-dk);margin-top:.2rem">${eq.phone}</div>
+      <div style="display:flex;gap:.5rem;margin-top:.5rem;flex-wrap:wrap">
+        <span style="font-size:.72rem;color:var(--md-muted)">${eq.area || '—'}</span>
+        <span style="color:var(--md-border)">·</span>
+        <span style="font-size:.72rem;color:var(--md-muted)">${eq.job_type || '—'}</span>
+      </div>
+      <div style="display:flex;gap:.5rem;margin-top:.75rem">
+        <button onclick="acceptEnquiry(${JSON.stringify(eq).replace(/"/g,'&quot;')})" 
+          style="flex:1;padding:.55rem;background:var(--md-gold-dk);border:none;border-radius:var(--md-radius);
+          font-family:'Cinzel',serif;font-size:.72rem;color:var(--md-black);font-weight:600;cursor:pointer">
+          Add to CRM
+        </button>
+        <button onclick="dismissEnquiry('${eq.id}',this.closest('[data-eq]')||this.closest('div').parentElement)"
+          style="padding:.55rem .85rem;background:none;border:1px solid var(--md-border);border-radius:var(--md-radius);
+          font-size:.72rem;color:var(--md-muted);cursor:pointer">
+          Dismiss
+        </button>
+      </div>
+    </div>
+  `).join('');
+
+  document.getElementById('confirmTitle').textContent = `${enquiries.length} New Enquir${enquiries.length > 1 ? 'ies' : 'y'}`;
+  document.getElementById('confirmMsg').innerHTML = `<div style="text-align:left;max-height:60vh;overflow-y:auto">${content}</div>`;
+  document.getElementById('confirmBtn').style.display = 'none';
+  openModal('confirmModal');
+}
+
+async function acceptEnquiry(eq) {
+  // Create client in CRM
+  const client = {
+    id: uid(),
+    name: eq.name,
+    phone: eq.phone,
+    area: eq.area || '',
+    job_type: eq.job_type || '',
+    source: 'Website booking form',
+    stage: 'enquiry',
+    quote: { callout: 50, labour: [], parts: [] },
+    notes: [{
+      date: Date.now(),
+      text: `Website enquiry received. Job: ${eq.job_type || 'not specified'}. Area: ${eq.area || 'not specified'}.`,
+    }],
+    photos: [],
+    created_at: Date.now(),
+    updated_at: Date.now(),
+  };
+  await dbPutClient(client);
+
+  // Mark as imported in D1
+  try {
+    await fetch(`${WORKER_URL}/api/enquiries/${eq.id}/import`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${cloudToken}` },
+    });
+  } catch (e) {}
+
+  showToast(`${eq.name} added to pipeline`, 'success');
+
+  // Refresh the modal content — remove the accepted card
+  // Close modal if no more enquiries left
+  const remaining = document.querySelectorAll('#confirmModal .modal-sheet > div[style*="background:var(--md-surface)"]');
+  if (!remaining.length) {
+    closeModal('confirmModal');
+    document.getElementById('confirmBtn').style.display = '';
+    document.getElementById('enquiry-notif')?.remove();
+  }
+  loadHome();
+}
+
+async function dismissEnquiry(id) {
+  // Just mark as imported so it doesn't show again — don't create a client
+  try {
+    if (!cloudToken) await cloudAuth();
+    await fetch(`${WORKER_URL}/api/enquiries/${id}/import`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${cloudToken}` },
+    });
+  } catch (e) {}
+  showToast('Enquiry dismissed', 'info');
 }
 
 boot();
