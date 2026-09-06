@@ -265,6 +265,52 @@ export default {
       return json({ stats: totals }, 200, origin);
     }
 
+    // ── POST /api/enquiry (PUBLIC — no auth needed) ─────────────────────────
+    // Called from the public booking form on index.html.
+    // Creates a lead record in the enquiries table.
+    // No sensitive data exposed — write-only endpoint.
+    if (path === '/api/enquiry' && method === 'POST') {
+      const body = await request.json().catch(() => null);
+      if (!body || !body.name || !body.phone) {
+        return err('Name and phone are required', 400, origin);
+      }
+
+      // Basic spam guard — same phone can't submit more than once per hour
+      const recent = await dbFirst(env.DB,
+        `SELECT id FROM enquiries WHERE phone = ? AND created_at > datetime('now', '-1 hour')`,
+        [body.phone]
+      );
+      if (recent) return json({ ok: true, note: 'duplicate' }, 200, origin);
+
+      const id = crypto.randomUUID();
+      await dbRun(env.DB,
+        `INSERT INTO enquiries (id, name, phone, area, job_type, source, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, datetime('now'))`,
+        [id, body.name, body.phone, body.area || '', body.job_type || '', body.source || 'Website']
+      );
+
+      return json({ ok: true, id }, 200, origin);
+    }
+
+    // ── GET /api/enquiries (AUTH required) ──────────────────────────────────
+    // App pulls pending enquiries to import into the CRM.
+    if (path === '/api/enquiries' && method === 'GET') {
+      const rows = await dbAll(env.DB,
+        `SELECT * FROM enquiries WHERE imported = 0 ORDER BY created_at DESC`
+      );
+      return json({ enquiries: rows }, 200, origin);
+    }
+
+    // ── POST /api/enquiries/:id/import (AUTH required) ──────────────────────
+    // Mark an enquiry as imported after the app pulls it in.
+    const importMatch = path.match(/^\/api\/enquiries\/([^/]+)\/import$/);
+    if (importMatch && method === 'POST') {
+      await dbRun(env.DB,
+        `UPDATE enquiries SET imported = 1 WHERE id = ?`, [importMatch[1]]
+      );
+      return json({ ok: true }, 200, origin);
+    }
+
     return err('Not found', 404, origin);
   },
 };
