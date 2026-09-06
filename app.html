@@ -855,6 +855,291 @@ body::before {
 /* Hidden file input */
 #photo-capture { display: none; }
 
+/* ══ CRM STYLES ══════════════════════════════════════════════ */
+
+/* Pipeline stages */
+.pipeline-scroll {
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
+  flex-shrink: 0; padding: .5rem .75rem;
+  background: var(--md-black);
+  border-bottom: 1px solid var(--md-border);
+}
+.pipeline-scroll::-webkit-scrollbar { display: none; }
+.pipeline-tabs { display: flex; gap: .35rem; min-width: max-content; }
+.stage-tab {
+  padding: .45rem .9rem;
+  border-radius: 20px;
+  font-family: 'Syne Mono', monospace;
+  font-size: .58rem; letter-spacing: .12em;
+  text-transform: uppercase;
+  border: 1px solid var(--md-border-lt);
+  background: var(--md-surface);
+  color: var(--md-muted);
+  cursor: pointer; white-space: nowrap;
+  transition: all .18s;
+  -webkit-tap-highlight-color: transparent;
+  display: flex; align-items: center; gap: .4rem;
+}
+.stage-tab.active { background: var(--md-gold-dk); border-color: var(--md-gold); color: var(--md-gold-lt); }
+.stage-count {
+  background: rgba(255,255,255,.12);
+  border-radius: 10px; padding: .05rem .4rem;
+  font-size: .6rem;
+}
+
+/* Client cards in list */
+.client-card {
+  background: var(--md-surface);
+  border: 1px solid var(--md-border);
+  border-radius: var(--md-radius-lg);
+  padding: 1rem 1.1rem;
+  margin-bottom: .6rem;
+  cursor: pointer;
+  transition: border-color .18s;
+  -webkit-tap-highlight-color: transparent;
+}
+.client-card:active { border-color: var(--md-gold-dk); }
+.client-name {
+  font-family: 'Syne', sans-serif;
+  font-size: .9rem; font-weight: 600;
+  color: var(--md-cream);
+}
+.client-job {
+  font-size: .78rem; color: var(--md-muted);
+  margin-top: .2rem;
+}
+.client-meta {
+  display: flex; align-items: center; gap: .6rem;
+  margin-top: .55rem; flex-wrap: wrap;
+}
+.client-area {
+  font-family: 'Syne Mono', monospace;
+  font-size: .6rem; letter-spacing: .1em;
+  color: var(--md-muted);
+}
+.client-value {
+  margin-left: auto;
+  font-family: 'Syne Mono', monospace;
+  font-size: .85rem; color: var(--md-gold-lt);
+}
+
+/* Stage pill colours */
+.stage-pill {
+  font-family: 'Syne Mono', monospace;
+  font-size: .55rem; letter-spacing: .12em;
+  text-transform: uppercase;
+  padding: .22rem .6rem; border-radius: 20px;
+}
+.sp-enquiry   { background: #1a1f2e; color: #7a9fd4; border: 1px solid #2d4a7a; }
+.sp-quoted    { background: #1f1a2e; color: #a07ad4; border: 1px solid #4a2d7a; }
+.sp-deposit   { background: #1a2a1f; color: #7ad4a0; border: 1px solid #2d7a4a; }
+.sp-inprog    { background: #2a1f0a; color: var(--md-gold-lt); border: 1px solid var(--md-gold-dk); }
+.sp-done      { background: #1a2e1a; color: #7ad47a; border: 1px solid #2d7a2d; }
+.sp-invoiced  { background: #2e1a1a; color: #d4a07a; border: 1px solid #7a3d2d; }
+.sp-paid      { background: #1a2e1a; color: #4caf7a; border: 1px solid #2d6b45; }
+
+/* Client detail screen */
+.detail-header {
+  background: var(--md-black);
+  border-bottom: 1px solid var(--md-border);
+  padding: .85rem 1rem;
+  display: flex; align-items: center; gap: .75rem;
+  flex-shrink: 0;
+}
+.detail-avatar {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: var(--md-gold-dk);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Cinzel', serif; font-size: 1rem;
+  color: var(--md-black); font-weight: 600;
+  flex-shrink: 0;
+}
+.detail-name {
+  font-family: 'Syne', sans-serif;
+  font-size: .92rem; font-weight: 600;
+  color: var(--md-cream);
+}
+.detail-phone {
+  font-family: 'Syne Mono', monospace;
+  font-size: .65rem; color: var(--md-gold-dk);
+  margin-top: .15rem;
+}
+
+/* Stage stepper */
+.stage-stepper {
+  display: flex; overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: .75rem 1rem; gap: 0;
+  background: var(--md-surface);
+  border-bottom: 1px solid var(--md-border);
+  flex-shrink: 0;
+}
+.stage-stepper::-webkit-scrollbar { display: none; }
+.step-item {
+  display: flex; flex-direction: column;
+  align-items: center; gap: .25rem;
+  flex-shrink: 0;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.step-circle {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--md-panel);
+  border: 2px solid var(--md-border-lt);
+  display: flex; align-items: center; justify-content: center;
+  font-size: .7rem;
+  transition: all .2s;
+}
+.step-item.done .step-circle { background: var(--md-gold-dk); border-color: var(--md-gold); color: var(--md-black); }
+.step-item.active .step-circle { background: var(--md-gold); border-color: var(--md-gold-lt); color: var(--md-black); }
+.step-label {
+  font-family: 'Syne Mono', monospace;
+  font-size: .48rem; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--md-muted);
+  text-align: center; white-space: nowrap;
+}
+.step-item.active .step-label { color: var(--md-gold-lt); }
+.step-item.done .step-label { color: var(--md-gold-dk); }
+.step-connector {
+  width: 20px; height: 2px;
+  background: var(--md-border-lt);
+  margin-top: 13px; flex-shrink: 0;
+}
+.step-connector.done { background: var(--md-gold-dk); }
+
+/* Quote builder */
+.quote-section { margin-bottom: 1rem; }
+.quote-section-title {
+  font-family: 'Syne Mono', monospace;
+  font-size: .6rem; letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--md-gold-dk);
+  margin-bottom: .5rem;
+  display: flex; align-items: center; gap: .6rem;
+}
+.quote-section-title::after {
+  content: ''; flex: 1; height: 1px;
+  background: var(--md-border);
+}
+.line-item {
+  display: flex; gap: .5rem; align-items: center;
+  margin-bottom: .4rem;
+}
+.line-desc {
+  flex: 1;
+  background: var(--md-panel);
+  border: 1px solid var(--md-border);
+  border-radius: var(--md-radius);
+  color: var(--md-cream);
+  font-family: 'Raleway', sans-serif;
+  font-size: .82rem; padding: .55rem .7rem;
+  outline: none;
+  -webkit-appearance: none;
+}
+.line-desc:focus { border-color: var(--md-gold-dk); }
+.line-desc::placeholder { color: var(--md-muted); font-size: .78rem; }
+.line-amount {
+  width: 90px; flex-shrink: 0;
+  background: var(--md-panel);
+  border: 1px solid var(--md-border);
+  border-radius: var(--md-radius);
+  color: var(--md-gold-lt);
+  font-family: 'Syne Mono', monospace;
+  font-size: .82rem; padding: .55rem .6rem;
+  outline: none; text-align: right;
+  -webkit-appearance: none;
+}
+.line-amount:focus { border-color: var(--md-gold-dk); }
+.line-del {
+  background: none; border: none;
+  color: var(--md-muted); font-size: 1.1rem;
+  cursor: pointer; padding: .25rem;
+  flex-shrink: 0;
+}
+.line-del:active { color: var(--fail-lt); }
+.add-line-btn {
+  background: none; border: 1px dashed var(--md-border-lt);
+  border-radius: var(--md-radius); color: var(--md-muted);
+  font-family: 'Syne Mono', monospace;
+  font-size: .62rem; letter-spacing: .1em;
+  padding: .5rem; width: 100%; cursor: pointer;
+  transition: all .18s;
+  -webkit-tap-highlight-color: transparent;
+}
+.add-line-btn:active { border-color: var(--md-gold-dk); color: var(--md-gold-lt); }
+
+/* Quote totals */
+.quote-totals {
+  background: var(--md-panel);
+  border: 1px solid var(--md-border-lt);
+  border-radius: var(--md-radius-lg);
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+.total-line {
+  display: flex; justify-content: space-between;
+  font-size: .82rem; padding: .3rem 0;
+  border-bottom: 1px solid var(--md-border);
+}
+.total-line:last-child { border-bottom: none; }
+.total-line .tl-label { color: var(--md-muted); }
+.total-line .tl-val { font-family: 'Syne Mono', monospace; color: var(--md-cream); }
+.total-line.grand { padding-top: .6rem; }
+.total-line.grand .tl-label { color: var(--md-gold-lt); font-weight: 600; font-size: .9rem; }
+.total-line.grand .tl-val { color: var(--md-gold-lt); font-size: 1.1rem; font-family: 'Syne Mono', monospace; }
+
+/* Notes / history entries */
+.history-entry {
+  background: var(--md-surface);
+  border: 1px solid var(--md-border);
+  border-radius: var(--md-radius);
+  padding: .75rem .9rem;
+  margin-bottom: .5rem;
+}
+.history-date {
+  font-family: 'Syne Mono', monospace;
+  font-size: .6rem; color: var(--md-gold-dk);
+  margin-bottom: .3rem;
+}
+.history-text { font-size: .82rem; color: var(--md-cream); line-height: 1.5; }
+
+/* WhatsApp send button */
+.btn-whatsapp {
+  width: 100%;
+  padding: .85rem;
+  background: #25D366;
+  color: #fff; border: none;
+  border-radius: var(--md-radius);
+  font-family: 'Syne', sans-serif;
+  font-size: .88rem; font-weight: 600;
+  cursor: pointer; transition: opacity .2s;
+  display: flex; align-items: center; justify-content: center; gap: .5rem;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-whatsapp:active { opacity: .88; }
+
+/* Photo grid in client detail */
+.photo-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: .4rem; margin-top: .5rem;
+}
+.photo-thumb {
+  aspect-ratio: 1;
+  border-radius: var(--md-radius);
+  object-fit: cover;
+  width: 100%; cursor: pointer;
+  border: 1px solid var(--md-border);
+}
+.photo-placeholder {
+  aspect-ratio: 1;
+  border-radius: var(--md-radius);
+  background: var(--md-panel);
+  border: 1px dashed var(--md-border-lt);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.4rem; cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
 @media (min-width: 500px) {
   #app { max-width: 480px; margin: 0 auto; }
 }
@@ -969,6 +1254,15 @@ body::before {
         <div class="action-arrow">›</div>
       </div>
 
+      <div class="action-card" onclick="showTab('clients')">
+        <div class="action-icon">👥</div>
+        <div>
+          <div class="action-title">Client Pipeline</div>
+          <div class="action-sub">Quotes, jobs in progress, invoices</div>
+        </div>
+        <div class="action-arrow">›</div>
+      </div>
+
       <div class="ornament-divider"></div>
 
       <div class="section-eyebrow">Recent Inspections</div>
@@ -988,13 +1282,19 @@ body::before {
         </svg>
         Home
       </button>
-      <button class="nav-btn" onclick="showTab('projects')">
+      <button class="nav-btn " onclick="showTab('projects')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
           <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
         </svg>
         Reports
       </button>
-      <button class="nav-btn" onclick="showTab('settings')">
+      <button class="nav-btn " onclick="showTab('clients')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+          <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>
+        </svg>
+        Clients
+      </button>
+      <button class="nav-btn " onclick="showTab('settings')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
           <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
         </svg>
@@ -1057,7 +1357,7 @@ body::before {
     </div>
     <div class="scroll-content" id="allProjectsList"></div>
     <nav class="bottom-nav">
-      <button class="nav-btn" onclick="showTab('home')">
+      <button class="nav-btn " onclick="showTab('home')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
           <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/>
         </svg>
@@ -1069,7 +1369,13 @@ body::before {
         </svg>
         Reports
       </button>
-      <button class="nav-btn" onclick="showTab('settings')">
+      <button class="nav-btn " onclick="showTab('clients')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+          <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>
+        </svg>
+        Clients
+      </button>
+      <button class="nav-btn " onclick="showTab('settings')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
           <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
         </svg>
@@ -1128,6 +1434,47 @@ body::before {
       </div>
     </div>
     <nav class="bottom-nav">
+      <button class="nav-btn " onclick="showTab('home')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+          <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/>
+        </svg>
+        Home
+      </button>
+      <button class="nav-btn " onclick="showTab('projects')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+        </svg>
+        Reports
+      </button>
+      <button class="nav-btn " onclick="showTab('clients')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+          <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>
+        </svg>
+        Clients
+      </button>
+      <button class="nav-btn active" onclick="showTab('settings')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+          <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
+        </svg>
+        Settings
+      </button>
+    </nav>
+  </div>
+
+  <!-- ════ CLIENTS / CRM SCREEN ════ -->
+  <div class="screen" id="screen-clients">
+    <div class="topbar">
+      <div>
+        <div class="topbar-brand">✦ Clients</div>
+        <div class="topbar-sub">Pipeline & job history</div>
+      </div>
+      <button onclick="openNewClientModal()" style="background:linear-gradient(135deg,var(--md-gold-dk),var(--md-gold));color:var(--md-black);border:none;border-radius:var(--md-radius);font-family:'Cinzel',serif;font-size:.7rem;font-weight:600;letter-spacing:.1em;padding:.5rem .85rem;cursor:pointer">+ New</button>
+    </div>
+    <div class="pipeline-scroll">
+      <div class="pipeline-tabs" id="pipelineTabs"></div>
+    </div>
+    <div class="scroll-content" id="clientList"></div>
+    <nav class="bottom-nav">
       <button class="nav-btn" onclick="showTab('home')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
           <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/>
@@ -1140,13 +1487,91 @@ body::before {
         </svg>
         Reports
       </button>
-      <button class="nav-btn active" onclick="showTab('settings')">
+      <button class="nav-btn active" onclick="showTab('clients')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+          <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>
+        </svg>
+        Clients
+      </button>
+      <button class="nav-btn" onclick="showTab('settings')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
           <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
         </svg>
         Settings
       </button>
     </nav>
+  </div>
+
+  <!-- ════ CLIENT DETAIL SCREEN ════ -->
+  <div class="screen" id="screen-client-detail">
+    <div class="detail-header">
+      <button class="back-btn" onclick="showScreen('clients')">‹</button>
+      <div class="detail-avatar" id="det-avatar">?</div>
+      <div style="flex:1">
+        <div class="detail-name" id="det-name">Client Name</div>
+        <div class="detail-phone" id="det-phone">Phone</div>
+      </div>
+      <button onclick="openClientWA()" style="background:#25D366;border:none;border-radius:var(--md-radius);padding:.5rem .7rem;cursor:pointer;font-size:1rem">💬</button>
+    </div>
+
+    <!-- Stage stepper -->
+    <div class="stage-stepper" id="stageStepper"></div>
+
+    <div class="scroll-content" id="clientDetailContent"></div>
+  </div>
+
+  <!-- NEW CLIENT MODAL -->
+  <div class="modal-overlay" id="newClientModal">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-title">New Client</div>
+      <div class="form-group">
+        <label class="form-label">Full Name</label>
+        <input class="form-input" id="nc-name" type="text" placeholder="e.g. John Dlamini" autocomplete="off"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Phone / WhatsApp</label>
+        <input class="form-input" id="nc-phone" type="tel" placeholder="e.g. 082 000 0000"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Area</label>
+        <select class="form-input" id="nc-area">
+          <option>Elysium / Ifafa</option><option>Mtwalumi</option><option>Bazley</option>
+          <option>Pennington / Umzumbe</option><option>Hibberdene / Umzinto</option>
+          <option>Scottburgh / Park Rynie</option><option>Port Shepstone / further</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Job Type</label>
+        <input class="form-input" id="nc-job" type="text" placeholder="e.g. Washing machine repair"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Source</label>
+        <select class="form-input" id="nc-source">
+          <option>WhatsApp enquiry</option><option>Website booking form</option>
+          <option>Referral</option><option>Repeat client</option><option>Other</option>
+        </select>
+      </div>
+      <div class="btn-row">
+        <button class="btn-secondary" onclick="closeModal('newClientModal')">Cancel</button>
+        <button class="btn-primary" onclick="saveNewClient()" style="flex:2">Add Client</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD NOTE MODAL -->
+  <div class="modal-overlay" id="addNoteModal">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-title">Add Note</div>
+      <div class="form-group">
+        <textarea class="form-input" id="note-text" rows="4" placeholder="What happened, what was discussed, what was found..."></textarea>
+      </div>
+      <div class="btn-row">
+        <button class="btn-secondary" onclick="closeModal('addNoteModal')">Cancel</button>
+        <button class="btn-primary" onclick="saveNote()">Save Note</button>
+      </div>
+    </div>
   </div>
 
 </div><!-- /app -->
@@ -1339,7 +1764,7 @@ let cloudToken = null;   // JWT from Worker auth
 // ── INDEXEDDB SETUP ──
 function openDB() {
   return new Promise((resolve, reject) => {
-    const req = indexedDB.open('ElysiumWorksDB', 2);
+    const req = indexedDB.open('ElysiumWorksDB', 3);
     req.onupgradeneeded = e => {
       const db = e.target.result;
       if (!db.objectStoreNames.contains('projects')) {
@@ -1347,6 +1772,9 @@ function openDB() {
       }
       if (!db.objectStoreNames.contains('settings')) {
         db.createObjectStore('settings', { keyPath: 'key' });
+      }
+      if (!db.objectStoreNames.contains('clients_crm')) {
+        db.createObjectStore('clients_crm', { keyPath: 'id' });
       }
     };
     req.onsuccess = e => resolve(e.target.result);
@@ -1541,6 +1969,7 @@ function showTab(tab) {
   showScreen(tab);
   if (tab === 'projects') loadAllProjects();
   if (tab === 'settings') loadSettings();
+  if (tab === 'clients') loadCRMClients();
 }
 
 function goBack() {
@@ -1572,9 +2001,18 @@ async function loadHome() {
   updateOnlineStatus();
   syncToCloud().catch(() => {});   // sync on every home screen load
   const projects = await dbGetAll('projects');
+  const clients  = await dbGetAllClients();
+
   document.getElementById('statTotal').textContent = projects.length;
   document.getElementById('statDraft').textContent = projects.filter(p => p.status === 'Draft').length;
-  document.getElementById('statDone').textContent = projects.filter(p => p.status === 'Sent').length;
+  document.getElementById('statDone').textContent  = projects.filter(p => p.status === 'Sent').length;
+
+  // CRM quick stats below
+  const activeJobs = clients.filter(c => !['paid','done'].includes(c.stage)).length;
+  const paidJobs   = clients.filter(c => c.stage === 'paid').length;
+  const totalEarned = clients
+    .filter(c => c.stage === 'paid')
+    .reduce((s,c) => s + calcClientTotal(c), 0);
 
   const list = document.getElementById('projectList');
   const recent = [...projects].sort((a,b) => b.created_at - a.created_at).slice(0, 6);
@@ -2423,8 +2861,578 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
   });
 });
 
-// ── BOOT ──
-async function boot() {
+// ══════════════════════════════════════════════════════════════
+// CRM MODULE
+// ══════════════════════════════════════════════════════════════
+
+const STAGES = [
+  { id: 'enquiry',  label: 'Enquiry',   icon: '📥', cls: 'sp-enquiry' },
+  { id: 'quoted',   label: 'Quoted',    icon: '📋', cls: 'sp-quoted' },
+  { id: 'deposit',  label: 'Deposit',   icon: '💰', cls: 'sp-deposit' },
+  { id: 'inprog',   label: 'In Prog',   icon: '🔧', cls: 'sp-inprog' },
+  { id: 'done',     label: 'Done',      icon: '✅', cls: 'sp-done' },
+  { id: 'invoiced', label: 'Invoiced',  icon: '📄', cls: 'sp-invoiced' },
+  { id: 'paid',     label: 'Paid',      icon: '🎉', cls: 'sp-paid' },
+];
+
+let currentStageFilter = 'all';
+let currentClient = null;
+let crmPhotoTarget = null;
+
+// ── DB helpers for clients store ──
+function dbGetAllClients() { return dbGetAll('clients_crm'); }
+function dbPutClient(c)    { return dbPut('clients_crm', c); }
+function dbGetClient(id)   { return dbGet('clients_crm', id); }
+function dbDelClient(id)   { return dbDelete('clients_crm', id); }
+
+// ── PIPELINE TABS ──
+function renderPipelineTabs(clients) {
+  const counts = {};
+  STAGES.forEach(s => counts[s.id] = 0);
+  clients.forEach(c => { if (counts[c.stage] !== undefined) counts[c.stage]++; });
+
+  const all = clients.length;
+  let html = `<button class="stage-tab ${currentStageFilter==='all'?'active':''}" onclick="filterStage('all')">
+    All <span class="stage-count">${all}</span></button>`;
+  STAGES.forEach(s => {
+    html += `<button class="stage-tab ${currentStageFilter===s.id?'active':''}" onclick="filterStage('${s.id}')">
+      ${s.icon} ${s.label} <span class="stage-count">${counts[s.id]}</span></button>`;
+  });
+  document.getElementById('pipelineTabs').innerHTML = html;
+}
+
+function filterStage(stageId) {
+  currentStageFilter = stageId;
+  loadCRMClients();
+}
+
+// ── CLIENT LIST ──
+async function loadCRMClients() {
+  const all = await dbGetAllClients();
+  renderPipelineTabs(all);
+
+  const filtered = currentStageFilter === 'all'
+    ? all
+    : all.filter(c => c.stage === currentStageFilter);
+
+  const sorted = filtered.sort((a,b) => b.updated_at - a.updated_at);
+  const el = document.getElementById('clientList');
+
+  if (!sorted.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">👥</div>
+      <div class="empty-text">${currentStageFilter==='all' ? 'No clients yet — tap + New to add one' : 'No clients in this stage'}</div></div>`;
+    return;
+  }
+
+  el.innerHTML = sorted.map(c => {
+    const stage = STAGES.find(s => s.id === c.stage) || STAGES[0];
+    const total = calcClientTotal(c);
+    const date = new Date(c.updated_at).toLocaleDateString('en-ZA', {day:'numeric',month:'short'});
+    return `<div class="client-card" onclick="openClientDetail('${c.id}')">
+      <div class="client-name">${c.name}</div>
+      <div class="client-job">${c.job_type || '—'}</div>
+      <div class="client-meta">
+        <span class="stage-pill ${stage.cls}">${stage.icon} ${stage.label}</span>
+        <span class="client-area">${c.area || ''}</span>
+        <span style="font-family:'Syne Mono',monospace;font-size:.6rem;color:var(--md-muted)">${date}</span>
+        ${total > 0 ? `<span class="client-value">R ${total.toLocaleString('en-ZA')}</span>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function calcClientTotal(c) {
+  const q = c.quote || {};
+  const callout = parseFloat(q.callout) || 0;
+  const labour = (q.labour || []).reduce((s,l) => s + (parseFloat(l.amount)||0), 0);
+  const parts  = (q.parts  || []).reduce((s,l) => s + (parseFloat(l.amount)||0), 0);
+  return callout + labour + parts;
+}
+
+// ── NEW CLIENT ──
+function openNewClientModal() {
+  ['nc-name','nc-phone','nc-job'].forEach(id => document.getElementById(id).value = '');
+  openModal('newClientModal');
+  setTimeout(() => document.getElementById('nc-name').focus(), 350);
+}
+
+async function saveNewClient() {
+  const name = document.getElementById('nc-name').value.trim();
+  const phone = document.getElementById('nc-phone').value.trim();
+  if (!name) { showToast('Name is required', 'error'); return; }
+
+  const client = {
+    id: uid(),
+    name,
+    phone,
+    area: document.getElementById('nc-area').value,
+    job_type: document.getElementById('nc-job').value.trim(),
+    source: document.getElementById('nc-source').value,
+    stage: 'enquiry',
+    quote: { callout: 50, labour: [], parts: [] },
+    notes: [],
+    photos: [],
+    created_at: Date.now(),
+    updated_at: Date.now(),
+  };
+
+  await dbPutClient(client);
+  closeModal('newClientModal');
+  showToast('Client added', 'success');
+  loadCRMClients();
+  openClientDetail(client.id);
+}
+
+// ── CLIENT DETAIL ──
+async function openClientDetail(clientId) {
+  const client = await dbGetClient(clientId);
+  if (!client) return;
+  currentClient = client;
+
+  // Header
+  document.getElementById('det-avatar').textContent = client.name.charAt(0).toUpperCase();
+  document.getElementById('det-name').textContent = client.name;
+  document.getElementById('det-phone').textContent = client.phone || 'No phone';
+
+  renderStageStepper(client.stage);
+  renderClientDetail(client);
+  showScreen('client-detail');
+}
+
+function renderStageStepper(activeStage) {
+  const activeIdx = STAGES.findIndex(s => s.id === activeStage);
+  let html = '';
+  STAGES.forEach((s, i) => {
+    const isDone = i < activeIdx;
+    const isActive = i === activeIdx;
+    const cls = isDone ? 'done' : isActive ? 'active' : '';
+    if (i > 0) html += `<div class="step-connector ${isDone?'done':''}"></div>`;
+    html += `<div class="step-item ${cls}" onclick="setClientStage('${s.id}')">
+      <div class="step-circle">${isDone ? '✓' : s.icon}</div>
+      <div class="step-label">${s.label}</div>
+    </div>`;
+  });
+  document.getElementById('stageStepper').innerHTML = html;
+}
+
+async function setClientStage(stageId) {
+  if (!currentClient) return;
+  currentClient.stage = stageId;
+  currentClient.updated_at = Date.now();
+  await dbPutClient(currentClient);
+  renderStageStepper(stageId);
+  showToast(`Moved to ${STAGES.find(s=>s.id===stageId)?.label}`, 'success');
+}
+
+function renderClientDetail(client) {
+  const q = client.quote || { callout: 50, labour: [], parts: [] };
+  const total = calcClientTotal(client);
+  const calloutFee = parseFloat(q.callout) || 50;
+
+  // Source + dates
+  let html = `
+  <div class="section-eyebrow" style="margin-bottom:.75rem">Client Info</div>
+  <div style="background:var(--md-surface);border:1px solid var(--md-border);border-radius:var(--md-radius-lg);padding:1rem;margin-bottom:1rem">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
+      <div><div style="font-family:'Syne Mono',monospace;font-size:.58rem;letter-spacing:.15em;color:var(--md-gold-dk);margin-bottom:.3rem">AREA</div>
+        <div style="font-size:.85rem;color:var(--md-cream)">${client.area||'—'}</div></div>
+      <div><div style="font-family:'Syne Mono',monospace;font-size:.58rem;letter-spacing:.15em;color:var(--md-gold-dk);margin-bottom:.3rem">SOURCE</div>
+        <div style="font-size:.85rem;color:var(--md-cream)">${client.source||'—'}</div></div>
+      <div><div style="font-family:'Syne Mono',monospace;font-size:.58rem;letter-spacing:.15em;color:var(--md-gold-dk);margin-bottom:.3rem">JOB TYPE</div>
+        <div style="font-size:.85rem;color:var(--md-cream)">${client.job_type||'—'}</div></div>
+      <div><div style="font-family:'Syne Mono',monospace;font-size:.58rem;letter-spacing:.15em;color:var(--md-gold-dk);margin-bottom:.3rem">ADDED</div>
+        <div style="font-size:.85rem;color:var(--md-cream)">${new Date(client.created_at).toLocaleDateString('en-ZA')}</div></div>
+    </div>
+  </div>
+
+  <div class="ornament-divider"></div>
+
+  <!-- QUOTE BUILDER -->
+  <div class="section-eyebrow">Quote / Invoice</div>
+
+  <div class="quote-section">
+    <div class="quote-section-title">Callout Fee</div>
+    <div class="line-item">
+      <input class="line-desc" type="text" value="Callout fee — ${client.area||'local'}" readonly style="opacity:.7"/>
+      <input class="line-amount" type="number" inputmode="decimal" id="q-callout" value="${calloutFee}"
+        onchange="updateCallout(this.value)" oninput="updateCallout(this.value)"/>
+    </div>
+  </div>
+
+  <div class="quote-section">
+    <div class="quote-section-title">Labour</div>
+    <div id="labour-lines">
+      ${(q.labour||[]).map((l,i) => labourLineHTML(i, l.desc, l.amount)).join('')}
+    </div>
+    <button class="add-line-btn" onclick="addLabourLine()">+ Add labour line</button>
+  </div>
+
+  <div class="quote-section">
+    <div class="quote-section-title">Parts & Materials</div>
+    <div id="parts-lines">
+      ${(q.parts||[]).map((l,i) => partsLineHTML(i, l.desc, l.amount)).join('')}
+    </div>
+    <button class="add-line-btn" onclick="addPartsLine()">+ Add part / material</button>
+  </div>
+
+  <!-- Totals -->
+  <div class="quote-totals" id="quoteTotals"></div>
+
+  <!-- Action buttons -->
+  <div style="display:flex;gap:.6rem;margin-bottom:.75rem">
+    <button class="btn-primary" style="flex:1" onclick="generateQuotePDF(false)">Send Quote PDF</button>
+    <button class="btn-primary" style="flex:1;background:linear-gradient(135deg,#2d6b45,#4caf7a)" onclick="generateQuotePDF(true)">Send Invoice</button>
+  </div>
+  <button class="btn-whatsapp" onclick="sendQuoteWhatsApp()">
+    💬 Send summary via WhatsApp
+  </button>
+
+  <div class="ornament-divider"></div>
+
+  <!-- NOTES / HISTORY -->
+  <div class="section-eyebrow">Job Notes & History</div>
+  <button class="btn-secondary" style="margin-bottom:.75rem" onclick="openModal('addNoteModal')">+ Add note</button>
+  <div id="notesList">
+    ${(client.notes||[]).slice().reverse().map(n => `
+      <div class="history-entry">
+        <div class="history-date">${new Date(n.date).toLocaleString('en-ZA',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</div>
+        <div class="history-text">${n.text}</div>
+      </div>`).join('') || '<div style="color:var(--md-muted);font-size:.82rem;padding:.5rem 0">No notes yet</div>'}
+  </div>
+
+  <div class="ornament-divider"></div>
+
+  <!-- PHOTOS -->
+  <div class="section-eyebrow">Job Photos</div>
+  <div class="photo-grid" id="crmPhotoGrid">
+    ${(client.photos||[]).map(p => `<img class="photo-thumb" src="${p}" onclick="viewPhoto(this.src)"/>`).join('')}
+    <div class="photo-placeholder" onclick="triggerCRMPhoto()">📷</div>
+  </div>
+
+  <div style="height:1.5rem"></div>
+
+  <!-- Danger zone -->
+  <button class="btn-danger" onclick="confirmDeleteClient('${client.id}')">Delete client</button>
+  <div style="height:2rem"></div>
+  `;
+
+  document.getElementById('clientDetailContent').innerHTML = html;
+  updateQuoteTotals();
+}
+
+function labourLineHTML(i, desc='', amount='') {
+  return `<div class="line-item" id="ll-${i}">
+    <input class="line-desc" type="text" placeholder="Labour description..." value="${desc}"
+      onchange="updateLine('labour',${i},'desc',this.value)" oninput="updateLine('labour',${i},'desc',this.value)"/>
+    <input class="line-amount" type="number" inputmode="decimal" placeholder="0" value="${amount}"
+      onchange="updateLine('labour',${i},'amount',this.value)" oninput="updateLine('labour',${i},'amount',this.value)"/>
+    <button class="line-del" onclick="removeLine('labour',${i})">✕</button>
+  </div>`;
+}
+
+function partsLineHTML(i, desc='', amount='') {
+  return `<div class="line-item" id="pl-${i}">
+    <input class="line-desc" type="text" placeholder="Part / material..." value="${desc}"
+      onchange="updateLine('parts',${i},'desc',this.value)" oninput="updateLine('parts',${i},'desc',this.value)"/>
+    <input class="line-amount" type="number" inputmode="decimal" placeholder="0" value="${amount}"
+      onchange="updateLine('parts',${i},'amount',this.value)" oninput="updateLine('parts',${i},'amount',this.value)"/>
+    <button class="line-del" onclick="removeLine('parts',${i})">✕</button>
+  </div>`;
+}
+
+function addLabourLine() {
+  if (!currentClient.quote) currentClient.quote = { callout:50, labour:[], parts:[] };
+  const i = currentClient.quote.labour.length;
+  currentClient.quote.labour.push({ desc:'', amount:0 });
+  document.getElementById('labour-lines').insertAdjacentHTML('beforeend', labourLineHTML(i));
+  autosaveClient();
+}
+
+function addPartsLine() {
+  if (!currentClient.quote) currentClient.quote = { callout:50, labour:[], parts:[] };
+  const i = currentClient.quote.parts.length;
+  currentClient.quote.parts.push({ desc:'', amount:0 });
+  document.getElementById('parts-lines').insertAdjacentHTML('beforeend', partsLineHTML(i));
+  autosaveClient();
+}
+
+function updateCallout(val) {
+  if (!currentClient.quote) currentClient.quote = { callout:50, labour:[], parts:[] };
+  currentClient.quote.callout = parseFloat(val) || 0;
+  updateQuoteTotals();
+  autosaveClient();
+}
+
+function updateLine(type, idx, field, val) {
+  if (!currentClient.quote) currentClient.quote = { callout:50, labour:[], parts:[] };
+  if (!currentClient.quote[type][idx]) currentClient.quote[type][idx] = { desc:'', amount:0 };
+  currentClient.quote[type][idx][field] = field === 'amount' ? (parseFloat(val)||0) : val;
+  updateQuoteTotals();
+  autosaveClient();
+}
+
+function removeLine(type, idx) {
+  if (!currentClient.quote) return;
+  currentClient.quote[type].splice(idx, 1);
+  autosaveClient();
+  renderClientDetail(currentClient); // re-render to reindex
+}
+
+function updateQuoteTotals() {
+  const q = currentClient.quote || {};
+  const callout = parseFloat(q.callout) || 0;
+  const labour  = (q.labour||[]).reduce((s,l) => s+(parseFloat(l.amount)||0), 0);
+  const parts   = (q.parts||[]).reduce((s,l)  => s+(parseFloat(l.amount)||0), 0);
+  const total   = callout + labour + parts;
+  const vat     = Math.round(total * 0.15 * 100) / 100;
+
+  const el = document.getElementById('quoteTotals');
+  if (!el) return;
+  el.innerHTML = `
+    <div class="total-line"><span class="tl-label">Callout</span><span class="tl-val">R ${callout.toLocaleString('en-ZA')}</span></div>
+    <div class="total-line"><span class="tl-label">Labour</span><span class="tl-val">R ${labour.toLocaleString('en-ZA')}</span></div>
+    <div class="total-line"><span class="tl-label">Parts & Materials</span><span class="tl-val">R ${parts.toLocaleString('en-ZA')}</span></div>
+    <div class="total-line"><span class="tl-label">Subtotal (excl. VAT)</span><span class="tl-val">R ${total.toLocaleString('en-ZA')}</span></div>
+    <div class="total-line grand"><span class="tl-label">Total</span><span class="tl-val">R ${total.toLocaleString('en-ZA')}</span></div>
+    <div style="font-size:.68rem;color:var(--md-muted);margin-top:.4rem">VAT not registered — no VAT charged</div>`;
+}
+
+let clientSaveTimer = null;
+function autosaveClient() {
+  if (!currentClient) return;
+  currentClient.updated_at = Date.now();
+  clearTimeout(clientSaveTimer);
+  clientSaveTimer = setTimeout(() => dbPutClient(currentClient), 800);
+}
+
+// ── NOTES ──
+async function saveNote() {
+  const text = document.getElementById('note-text').value.trim();
+  if (!text || !currentClient) return;
+  if (!currentClient.notes) currentClient.notes = [];
+  currentClient.notes.push({ date: Date.now(), text });
+  currentClient.updated_at = Date.now();
+  await dbPutClient(currentClient);
+  closeModal('addNoteModal');
+  document.getElementById('note-text').value = '';
+  showToast('Note saved', 'success');
+  renderClientDetail(currentClient);
+}
+
+// ── WHATSAPP ──
+function openClientWA() {
+  if (!currentClient?.phone) { showToast('No phone number saved', 'error'); return; }
+  const clean = currentClient.phone.replace(/\D/g,'');
+  const num = clean.startsWith('0') ? '27' + clean.slice(1) : clean;
+  window.open(`https://wa.me/${num}`, '_blank');
+}
+
+function sendQuoteWhatsApp() {
+  if (!currentClient) return;
+  const q = currentClient.quote || {};
+  const callout = parseFloat(q.callout)||0;
+  const labour  = (q.labour||[]).reduce((s,l)=>s+(parseFloat(l.amount)||0),0);
+  const parts   = (q.parts||[]).reduce((s,l) =>s+(parseFloat(l.amount)||0),0);
+  const total   = callout + labour + parts;
+
+  const settingsRec = currentClient; // use co from settings if available
+  let msg = `Hi ${currentClient.name} 👋\n\nHere's your quote from *Elysium Works*:\n\n`;
+  msg += `*Job:* ${currentClient.job_type||'Service'}\n`;
+  msg += `*Area:* ${currentClient.area||''}\n\n`;
+  if (callout) msg += `• Callout fee: R${callout}\n`;
+  (q.labour||[]).forEach(l => { if(l.desc||l.amount) msg += `• ${l.desc||'Labour'}: R${l.amount||0}\n`; });
+  (q.parts||[]).forEach(l  => { if(l.desc||l.amount) msg += `• ${l.desc||'Part'}: R${l.amount||0}\n`; });
+  msg += `\n*Total: R${total.toLocaleString('en-ZA')}*\n\n`;
+  msg += `Please confirm if you'd like to proceed.\n\nThanks — Morney\n071 818 1132`;
+
+  const clean = (currentClient.phone||'').replace(/\D/g,'');
+  const num = clean.startsWith('0') ? '27'+clean.slice(1) : clean;
+  const url = `https://wa.me/${num}?text=${encodeURIComponent(msg)}`;
+  window.open(url, '_blank');
+}
+
+// ── PDF QUOTE / INVOICE ──
+async function generateQuotePDF(isInvoice) {
+  if (typeof window.jspdf === 'undefined') { showToast('PDF library loading...', 'info'); return; }
+  const { jsPDF } = window.jspdf;
+  const client = currentClient;
+  const q = client.quote || {};
+  const callout = parseFloat(q.callout)||0;
+  const labour  = (q.labour||[]).filter(l => l.desc||l.amount);
+  const parts   = (q.parts||[]).filter(l  => l.desc||l.amount);
+  const total   = callout + labour.reduce((s,l)=>s+(parseFloat(l.amount)||0),0)
+                          + parts.reduce((s,l) =>s+(parseFloat(l.amount)||0),0);
+
+  const doc = new jsPDF({ unit:'mm', format:'a4' });
+  const W = 210; const M = 18;
+  let y = 0;
+
+  const hex = hex => { const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16); return [r,g,b]; };
+
+  // Header
+  doc.setFillColor(...hex('#264736')); doc.rect(0,0,W,50,'F');
+  doc.setFillColor(...hex('#0a0906')); doc.rect(0,0,6,297,'F');
+  doc.setTextColor(...hex('#e8c87a'));
+  doc.setFontSize(20); doc.setFont('helvetica','bold');
+  doc.text(isInvoice ? 'INVOICE' : 'QUOTATION', M, 22);
+  doc.setTextColor(...hex('#a8d4b8'));
+  doc.setFontSize(8); doc.setFont('helvetica','normal');
+  doc.text('ELYSIUM WORKS · KZN SOUTH COAST', M, 30);
+  doc.text('071 818 1132 · elysiumweb@proton.me', M, 36);
+
+  // Date + ref
+  const ref = `EW-${Date.now().toString(36).toUpperCase().slice(-6)}`;
+  const dateStr = new Date().toLocaleDateString('en-ZA',{day:'numeric',month:'long',year:'numeric'});
+  doc.setTextColor(...hex('#c9943c'));
+  doc.setFontSize(8);
+  doc.text(dateStr, W-M, 22, {align:'right'});
+  doc.text(`Ref: ${ref}`, W-M, 29, {align:'right'});
+
+  y = 60;
+  // Client box
+  doc.setFillColor(...hex('#1a1610')); doc.roundedRect(M,y,W-M*2,28,3,3,'F');
+  doc.setDrawColor(...hex('#3d3526')); doc.roundedRect(M,y,W-M*2,28,3,3,'S');
+  doc.setTextColor(...hex('#7a5815')); doc.setFontSize(6.5);
+  doc.text('CLIENT', M+5, y+8);
+  doc.setTextColor(...hex('#f0e6ce')); doc.setFontSize(11); doc.setFont('helvetica','bold');
+  doc.text(client.name, M+5, y+16);
+  doc.setTextColor(...hex('#c9943c')); doc.setFontSize(8); doc.setFont('helvetica','normal');
+  doc.text(client.phone||'', M+5, y+23);
+  doc.setTextColor(...hex('#7a5815')); doc.setFontSize(6.5);
+  doc.text('JOB TYPE', (W/2)+5, y+8);
+  doc.setTextColor(...hex('#f0e6ce')); doc.setFontSize(9); doc.setFont('helvetica','bold');
+  doc.text(client.job_type||'Service', (W/2)+5, y+16);
+  doc.setTextColor(...hex('#c9943c')); doc.setFontSize(8); doc.setFont('helvetica','normal');
+  doc.text(client.area||'', (W/2)+5, y+23);
+
+  y += 36;
+
+  // Line items table
+  const addSection = (title, lines) => {
+    if (!lines.length) return;
+    doc.setFillColor(...hex('#211c14')); doc.rect(M,y,W-M*2,8,'F');
+    doc.setDrawColor(...hex('#7a5815')); doc.rect(M,y,3,8,'F');
+    doc.setTextColor(...hex('#e8c87a')); doc.setFontSize(7.5); doc.setFont('helvetica','bold');
+    doc.text(title, M+6, y+5.5);
+    y += 12;
+    lines.forEach(l => {
+      doc.setTextColor(...hex('#f0e6ce')); doc.setFontSize(8.5); doc.setFont('helvetica','normal');
+      const descLines = doc.splitTextToSize(l.desc||title, W-M*2-30);
+      doc.text(descLines, M+4, y+4);
+      doc.setTextColor(...hex('#c9943c')); doc.setFont('helvetica','bold');
+      doc.text(`R ${(parseFloat(l.amount)||0).toLocaleString('en-ZA')}`, W-M-2, y+4, {align:'right'});
+      doc.setDrawColor(...hex('#2c2619'));
+      doc.line(M, y+8, W-M, y+8);
+      y += descLines.length*5 + 4;
+    });
+    y += 2;
+  };
+
+  addSection('CALLOUT FEE', [{ desc:`Callout — ${client.area||'local'}`, amount: callout }]);
+  addSection('LABOUR', labour);
+  addSection('PARTS & MATERIALS', parts);
+
+  // Total box
+  y += 4;
+  doc.setFillColor(...hex('#1a1610')); doc.roundedRect(M,y,W-M*2,22,3,3,'F');
+  doc.setDrawColor(...hex('#c9943c')); doc.roundedRect(M,y,W-M*2,22,3,3,'S');
+  doc.setTextColor(...hex('#7a5815')); doc.setFontSize(7); doc.setFont('helvetica','normal');
+  doc.text('TOTAL AMOUNT', M+6, y+9);
+  doc.setTextColor(...hex('#e8c87a')); doc.setFontSize(16); doc.setFont('helvetica','bold');
+  doc.text(`R ${total.toLocaleString('en-ZA')}`, W-M-4, y+15, {align:'right'});
+  doc.setTextColor(...hex('#7a5815')); doc.setFontSize(6.5); doc.setFont('helvetica','normal');
+  doc.text('VAT not registered — no VAT charged', M+6, y+17);
+
+  if (!isInvoice) {
+    y += 30;
+    doc.setTextColor(...hex('#7a6d58')); doc.setFontSize(7.5); doc.setFont('helvetica','italic');
+    doc.text('This quotation is valid for 30 days. A 50% deposit is required to confirm the booking.', M, y);
+    doc.text('Parts are sourced at cost — final invoice may vary slightly if parts prices change.', M, y+6);
+  }
+
+  // Footer on all pages
+  const pages = doc.internal.getNumberOfPages();
+  for (let p=1;p<=pages;p++) {
+    doc.setPage(p);
+    doc.setFillColor(...hex('#0a0906')); doc.rect(0,283,W,14,'F');
+    doc.setTextColor(...hex('#7a5815')); doc.setFontSize(6.5); doc.setFont('helvetica','normal');
+    doc.text('✦ Elysium Works · KZN South Coast · 071 818 1132 · elysiumweb@proton.me', M, 290);
+    doc.text(`${p}/${pages}`, W-M, 290, {align:'right'});
+  }
+
+  const docType = isInvoice ? 'Invoice' : 'Quote';
+  const fname = `EW_${docType}_${client.name.replace(/\s+/g,'_')}_${ref}.pdf`;
+  doc.save(fname);
+  showToast(`${docType} PDF downloaded`, 'success');
+
+  // Auto-advance stage
+  if (isInvoice && currentClient.stage === 'done') {
+    await setClientStage('invoiced');
+  } else if (!isInvoice && currentClient.stage === 'enquiry') {
+    await setClientStage('quoted');
+  }
+}
+
+// ── CRM PHOTOS ──
+function triggerCRMPhoto() {
+  crmPhotoTarget = true;
+  document.getElementById('photo-capture').click();
+}
+
+// ── DELETE CLIENT ──
+function confirmDeleteClient(id) {
+  document.getElementById('confirmTitle').textContent = 'Delete Client';
+  document.getElementById('confirmMsg').textContent = 'This will permanently delete this client, their quote, notes, and photos.';
+  document.getElementById('confirmBtn').onclick = async () => {
+    await dbDelClient(id);
+    closeModal('confirmModal');
+    showToast('Client deleted', 'info');
+    showScreen('clients');
+    loadCRMClients();
+  };
+  openModal('confirmModal');
+}
+
+// ── PHOTO HANDLER EXTENSION ──
+// Extend existing photo handler to also handle CRM photos
+const _origPhotoHandler = document.getElementById('photo-capture').onchange;
+
+// ── VIEW PHOTO ──
+function viewPhoto(src) {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center';
+  overlay.innerHTML = `<img src="${src}" style="max-width:95vw;max-height:90vh;border-radius:8px"/>`;
+  overlay.onclick = () => document.body.removeChild(overlay);
+  document.body.appendChild(overlay);
+}
+
+// ── HOOK PHOTO CAPTURE FOR CRM ──
+document.getElementById('photo-capture').addEventListener('change', async function(e) {
+  if (!crmPhotoTarget || !currentClient) return;
+  const files = Array.from(e.target.files);
+  if (!files.length) return;
+
+  if (!currentClient.photos) currentClient.photos = [];
+  for (const file of files) {
+    const compressed = await compressImage(file, 800, 0.75);
+    currentClient.photos.push(compressed);
+  }
+  currentClient.updated_at = Date.now();
+  await dbPutClient(currentClient);
+  crmPhotoTarget = null;
+
+  // Refresh photo grid
+  const grid = document.getElementById('crmPhotoGrid');
+  if (grid) {
+    grid.innerHTML = currentClient.photos.map(p =>
+      `<img class="photo-thumb" src="${p}" onclick="viewPhoto(this.src)"/>`).join('')
+      + `<div class="photo-placeholder" onclick="triggerCRMPhoto()">📷</div>`;
+  }
+  showToast(`${files.length} photo${files.length>1?'s':''} added`, 'success');
+  this.value = '';
+});
+
+
   DB = await openDB();
   await initAuth();
 }
