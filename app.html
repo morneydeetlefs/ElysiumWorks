@@ -1977,7 +1977,7 @@ function showTab(tab) {
   showScreen(tab);
   if (tab === 'projects') loadAllProjects();
   if (tab === 'settings') loadSettings();
-  if (tab === 'clients') loadCRMClients();
+  if (tab === 'clients') { currentStageFilter = 'all'; loadCRMClients(); }
 }
 
 function goBack() {
@@ -2928,7 +2928,7 @@ async function loadCRMClients() {
 
   if (!sorted.length) {
     el.innerHTML = `<div class="empty-state"><div class="empty-icon">👥</div>
-      <div class="empty-text">${currentStageFilter==='all' ? 'No clients yet — tap + New to add one' : 'No clients in this stage'}</div></div>`;
+      <div class="empty-text">${currentStageFilter === 'all' ? 'No clients yet — tap + New to add one' : 'No clients in this stage'}</div></div>`;
     return;
   }
 
