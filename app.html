@@ -866,19 +866,34 @@ body::before {
 /* ══ CRM STYLES ══════════════════════════════════════════════ */
 
 /* Pipeline stages */
-.pipeline-scroll {
-  overflow-x: auto; -webkit-overflow-scrolling: touch;
-  flex-shrink: 0; padding: .5rem .75rem;
+.pipeline-scroll-wrap {
+  position: relative;
+  flex-shrink: 0;
   background: var(--md-black);
   border-bottom: 1px solid var(--md-border);
 }
-.pipeline-scroll::-webkit-scrollbar { display: none; }
-.pipeline-tabs { display: flex; gap: .35rem; min-width: max-content; }
+.pipeline-scroll-wrap::after {
+  content: '';
+  position: absolute; top: 0; right: 0; bottom: 0;
+  width: 40px;
+  background: linear-gradient(to right, transparent, var(--md-black));
+  pointer-events: none;
+}
+.pipeline-scroll {
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
+  padding: .6rem .75rem;
+  scrollbar-width: thin;
+  scrollbar-color: var(--md-border-lt) transparent;
+}
+.pipeline-scroll::-webkit-scrollbar { height: 3px; }
+.pipeline-scroll::-webkit-scrollbar-track { background: transparent; }
+.pipeline-scroll::-webkit-scrollbar-thumb { background: var(--md-border-lt); border-radius: 2px; }
+.pipeline-tabs { display: flex; gap: .3rem; min-width: max-content; padding-right: 2rem; }
 .stage-tab {
-  padding: .45rem .9rem;
+  padding: .4rem .75rem;
   border-radius: 20px;
   font-family: 'Syne Mono', monospace;
-  font-size: .58rem; letter-spacing: .12em;
+  font-size: .57rem; letter-spacing: .1em;
   text-transform: uppercase;
   border: 1px solid var(--md-border-lt);
   background: var(--md-surface);
@@ -886,13 +901,13 @@ body::before {
   cursor: pointer; white-space: nowrap;
   transition: all .18s;
   -webkit-tap-highlight-color: transparent;
-  display: flex; align-items: center; gap: .4rem;
+  display: flex; align-items: center; gap: .35rem;
 }
 .stage-tab.active { background: var(--md-gold-dk); border-color: var(--md-gold); color: var(--md-gold-lt); }
 .stage-count {
   background: rgba(255,255,255,.12);
-  border-radius: 10px; padding: .05rem .4rem;
-  font-size: .6rem;
+  border-radius: 10px; padding: .05rem .38rem;
+  font-size: .58rem;
 }
 
 /* Client cards in list */
@@ -1478,8 +1493,10 @@ body::before {
       </div>
       <button onclick="openNewClientModal()" style="background:linear-gradient(135deg,var(--md-gold-dk),var(--md-gold));color:var(--md-black);border:none;border-radius:var(--md-radius);font-family:'Cinzel',serif;font-size:.7rem;font-weight:600;letter-spacing:.1em;padding:.5rem .85rem;cursor:pointer">+ New</button>
     </div>
-    <div class="pipeline-scroll">
-      <div class="pipeline-tabs" id="pipelineTabs"></div>
+    <div class="pipeline-scroll-wrap">
+      <div class="pipeline-scroll">
+        <div class="pipeline-tabs" id="pipelineTabs"></div>
+      </div>
     </div>
     <div class="scroll-content" id="clientList"></div>
     <nav class="bottom-nav">
