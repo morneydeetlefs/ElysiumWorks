@@ -2393,8 +2393,15 @@ async function autoSave() {
   const total = Object.values(itemStatuses).reduce((s, v) => s + (v.cost || 0), 0);
   currentProject.total_cost = total;
   await dbPut('projects', currentProject);
-  // Background cloud sync (non-blocking)
   syncToCloud().catch(() => {});
+  // Keep home stats current without re-rendering the whole home screen
+  const all = await dbGetAll('projects');
+  const statTotal = document.getElementById('statTotal');
+  const statDraft = document.getElementById('statDraft');
+  const statDone  = document.getElementById('statDone');
+  if (statTotal) statTotal.textContent = all.length;
+  if (statDraft) statDraft.textContent = all.filter(p => p.status === 'Draft').length;
+  if (statDone)  statDone.textContent  = all.filter(p => p.status === 'Sent').length;
 }
 
 // ── SUMMARY / REPORT ──
@@ -2475,6 +2482,13 @@ async function markStatus(status) {
   currentProject.status = status;
   await dbPut('projects', currentProject);
   showToast(`Marked as ${status}`, 'success');
+  // Update status pills in summary screen immediately
+  document.querySelectorAll('.status-pill').forEach(el => {
+    el.className = `status-pill status-${ {Draft:'draft',Completed:'completed',Sent:'sent'}[status]||'draft' }`;
+    el.textContent = status;
+  });
+  // Refresh home stats in background
+  loadHome();
 }
 
 // ── PDF GENERATION ──
@@ -2791,7 +2805,7 @@ function confirmDelete(projectId) {
   document.getElementById('confirmMsg').textContent = 'This cannot be undone. All checklist data and photos for this project will be permanently deleted.';
   document.getElementById('confirmBtn').onclick = async () => {
     await dbDelete('projects', projectId);
-    cloudDelete(projectId).catch(() => {});   // also remove from D1
+    cloudDelete(projectId).catch(() => {});
     closeModal('confirmModal');
     showToast('Inspection deleted', 'info');
     loadAllProjects();
@@ -3065,6 +3079,17 @@ async function setClientStage(stageId) {
   await dbPutClient(currentClient);
   renderStageStepper(stageId);
   showToast(`Moved to ${STAGES.find(s=>s.id===stageId)?.label}`, 'success');
+  // Update the client card in the list behind the detail screen
+  // so it's correct when user goes back without full reload
+  const card = document.querySelector(`[onclick="openClientDetail('${currentClient.id}')"]`);
+  if (card) {
+    const stage = STAGES.find(s => s.id === stageId) || STAGES[0];
+    const pill = card.querySelector('.stage-pill');
+    if (pill) {
+      pill.className = `stage-pill ${stage.cls}`;
+      pill.textContent = `${stage.icon} ${stage.label}`;
+    }
+  }
 }
 
 function renderClientDetail(client) {
@@ -3419,8 +3444,7 @@ async function generateQuotePDF(isInvoice) {
     await setClientStage('invoiced');
   } else if (!isInvoice && currentClient.stage === 'enquiry') {
     await setClientStage('quoted');
-  }
-}
+  }}
 
 // ── CRM PHOTOS ──
 function triggerCRMPhoto() {
@@ -3436,8 +3460,10 @@ function confirmDeleteClient(id) {
     await dbDelClient(id);
     closeModal('confirmModal');
     showToast('Client deleted', 'info');
+    currentClient = null;
     showScreen('clients');
     loadCRMClients();
+    loadHome();
   };
   openModal('confirmModal');
 }
@@ -3575,7 +3601,6 @@ function showEnquiryReview(enquiries) {
 }
 
 async function acceptEnquiry(eq) {
-  // Create client in CRM
   const client = {
     id: uid(),
     name: eq.name,
@@ -3605,15 +3630,28 @@ async function acceptEnquiry(eq) {
 
   showToast(`${eq.name} added to pipeline`, 'success');
 
-  // Refresh the modal content — remove the accepted card
-  // Close modal if no more enquiries left
-  const remaining = document.querySelectorAll('#confirmModal .modal-sheet > div[style*="background:var(--md-surface)"]');
+  // Remove this card from the review modal immediately
+  const allCards = document.querySelectorAll('#confirmModal .modal-sheet .history-entry, #confirmModal [style*="background:var(--md-surface)"]');
+  // Find and remove the card for this enquiry by name match
+  document.querySelectorAll('#confirmModal button').forEach(btn => {
+    if (btn.getAttribute('onclick') && btn.getAttribute('onclick').includes(eq.id)) {
+      const card = btn.closest('div[style]');
+      if (card) card.remove();
+    }
+  });
+
+  // If no cards remain, close modal and clean up
+  const remaining = document.querySelectorAll('#confirmModal [style*="border:1px solid var(--md-border)"]');
   if (!remaining.length) {
     closeModal('confirmModal');
-    document.getElementById('confirmBtn').style.display = '';
     document.getElementById('enquiry-notif')?.remove();
   }
+
   loadHome();
+  // Refresh client list if we're on that screen
+  if (document.getElementById('screen-clients').classList.contains('active')) {
+    loadCRMClients();
+  }
 }
 
 async function dismissEnquiry(id) {
