@@ -19,8 +19,10 @@ const ALLOWED_ORIGIN = 'https://elysiumworks.pages.dev';
 const TOKEN_TTL_HOURS = 12;
 
 // ── CORS HEADERS ──────────────────────────────────────────────────────────────
-function corsHeaders(origin) {
-  const allow = origin === ALLOWED_ORIGIN ? origin : ALLOWED_ORIGIN;
+function corsHeaders(origin, isPublic = false) {
+  // Public endpoints (like /api/enquiry) accept any origin
+  // Auth-required endpoints are locked to the Pages domain
+  const allow = isPublic ? (origin || '*') : ALLOWED_ORIGIN;
   return {
     'Access-Control-Allow-Origin': allow,
     'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
@@ -29,15 +31,15 @@ function corsHeaders(origin) {
   };
 }
 
-function json(data, status = 200, origin = ALLOWED_ORIGIN) {
+function json(data, status = 200, origin = ALLOWED_ORIGIN, isPublic = false) {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { 'Content-Type': 'application/json', ...corsHeaders(origin) },
+    headers: { 'Content-Type': 'application/json', ...corsHeaders(origin, isPublic) },
   });
 }
 
-function err(msg, status = 400, origin = ALLOWED_ORIGIN) {
-  return json({ error: msg }, status, origin);
+function err(msg, status = 400, origin = ALLOWED_ORIGIN, isPublic = false) {
+  return json({ error: msg }, status, origin, isPublic);
 }
 
 // ── SIMPLE JWT (HMAC-SHA256, no library needed) ───────────────────────────────
@@ -106,9 +108,10 @@ export default {
     const method = request.method;
     const origin = request.headers.get('Origin') || ALLOWED_ORIGIN;
 
-    // Preflight
+    // Preflight — public endpoints need wildcard CORS
     if (method === 'OPTIONS') {
-      return new Response(null, { status: 204, headers: corsHeaders(origin) });
+      const isPublicPath = path === '/api/enquiry';
+      return new Response(null, { status: 204, headers: corsHeaders(origin, isPublicPath) });
     }
 
     // ── POST /api/auth ──────────────────────────────────────────────────────
@@ -118,6 +121,29 @@ export default {
       const exp = Math.floor(Date.now() / 1000) + TOKEN_TTL_HOURS * 3600;
       const token = await sign({ sub: 'admin', exp }, env.JWT_SECRET);
       return json({ token, exp }, 200, origin);
+    }
+
+    // ── POST /api/enquiry (PUBLIC — no auth needed) ─────────────────────────
+    if (path === '/api/enquiry' && method === 'POST') {
+      const body = await request.json().catch(() => null);
+      if (!body || !body.name || !body.phone) {
+        return err('Name and phone are required', 400, origin, true);
+      }
+
+      const recent = await dbFirst(env.DB,
+        `SELECT id FROM enquiries WHERE phone = ? AND created_at > datetime('now', '-1 hour')`,
+        [body.phone]
+      );
+      if (recent) return json({ ok: true, note: 'duplicate' }, 200, origin, true);
+
+      const id = crypto.randomUUID();
+      await dbRun(env.DB,
+        `INSERT INTO enquiries (id, name, phone, area, job_type, source, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, datetime('now'))`,
+        [id, body.name, body.phone, body.area || '', body.job_type || '', body.source || 'Website']
+      );
+
+      return json({ ok: true, id }, 200, origin, true);
     }
 
     // All routes below require auth
@@ -251,6 +277,48 @@ export default {
       return json({ ok: true }, 200, origin);
     }
 
+    // ── POST /api/clients/sync ──────────────────────────────────────────────
+    // Push clients from device to D1 (last-write-wins)
+    if (path === '/api/clients/sync' && method === 'POST') {
+      const body = await request.json().catch(() => null);
+      if (!body || !Array.isArray(body.clients)) {
+        return err('Expected { clients: [] }', 400, origin);
+      }
+      for (const c of body.clients) {
+        if (!c.id || !c.data) continue;
+        // Upsert — only overwrite if incoming is newer
+        const existing = await dbFirst(env.DB,
+          `SELECT updated_at FROM clients_crm WHERE id = ?`, [c.id]
+        );
+        if (!existing || c.updated_at > existing.updated_at) {
+          await dbRun(env.DB,
+            `INSERT INTO clients_crm (id, data, updated_at) VALUES (?, ?, ?)
+             ON CONFLICT(id) DO UPDATE SET data = excluded.data, updated_at = excluded.updated_at`,
+            [c.id, c.data, c.updated_at]
+          );
+        }
+      }
+      return json({ ok: true, count: body.clients.length }, 200, origin);
+    }
+
+    // ── GET /api/clients/sync ───────────────────────────────────────────────
+    // Pull all clients from D1 to device
+    if (path === '/api/clients/sync' && method === 'GET') {
+      const since = url.searchParams.get('since') || '0';
+      const rows = await dbAll(env.DB,
+        `SELECT id, data, updated_at FROM clients_crm WHERE updated_at > ? ORDER BY updated_at DESC`,
+        [parseInt(since)]
+      );
+      return json({ clients: rows, ts: Date.now() }, 200, origin);
+    }
+
+    // ── DELETE /api/clients/:id ─────────────────────────────────────────────
+    const clientDelMatch = path.match(/^\/api\/clients\/([^/]+)$/);
+    if (clientDelMatch && method === 'DELETE') {
+      await dbRun(env.DB, `DELETE FROM clients_crm WHERE id = ?`, [clientDelMatch[1]]);
+      return json({ ok: true }, 200, origin);
+    }
+
     // ── GET /api/stats ──────────────────────────────────────────────────────
     if (path === '/api/stats' && method === 'GET') {
       const totals = await dbFirst(env.DB,
@@ -263,33 +331,6 @@ export default {
          FROM projects`
       );
       return json({ stats: totals }, 200, origin);
-    }
-
-    // ── POST /api/enquiry (PUBLIC — no auth needed) ─────────────────────────
-    // Called from the public booking form on index.html.
-    // Creates a lead record in the enquiries table.
-    // No sensitive data exposed — write-only endpoint.
-    if (path === '/api/enquiry' && method === 'POST') {
-      const body = await request.json().catch(() => null);
-      if (!body || !body.name || !body.phone) {
-        return err('Name and phone are required', 400, origin);
-      }
-
-      // Basic spam guard — same phone can't submit more than once per hour
-      const recent = await dbFirst(env.DB,
-        `SELECT id FROM enquiries WHERE phone = ? AND created_at > datetime('now', '-1 hour')`,
-        [body.phone]
-      );
-      if (recent) return json({ ok: true, note: 'duplicate' }, 200, origin);
-
-      const id = crypto.randomUUID();
-      await dbRun(env.DB,
-        `INSERT INTO enquiries (id, name, phone, area, job_type, source, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, datetime('now'))`,
-        [id, body.name, body.phone, body.area || '', body.job_type || '', body.source || 'Website']
-      );
-
-      return json({ ok: true, id }, 200, origin);
     }
 
     // ── GET /api/enquiries (AUTH required) ──────────────────────────────────

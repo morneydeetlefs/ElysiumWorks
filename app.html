@@ -1879,9 +1879,12 @@ function hideAuth() {
   isAuthenticated = true;
   document.getElementById('authScreen').style.display = 'none';
   loadHome();
-  cloudAuth().catch(() => {});
-  // Check for new website enquiries 3 seconds after login
-  setTimeout(() => checkNewEnquiries().catch(() => {}), 3000);
+  // Full two-way sync 2 seconds after login
+  setTimeout(() => fullSync().catch(() => {}), 2000);
+  // Check for new website enquiries 4 seconds after login
+  setTimeout(() => checkNewEnquiries().catch(() => {}), 4000);
+  // Start 5-minute sync interval
+  startSyncInterval();
 }
 
 // ── CLOUD SYNC LAYER ──────────────────────────────────────────────────────────
@@ -1950,24 +1953,160 @@ async function syncToCloud() {
   }
 }
 
+// ── TWO-WAY CLIENT SYNC ───────────────────────────────────────────────────────
+
+// Push all local clients to D1 (last-write-wins by updated_at)
+async function pushClients() {
+  if (!WORKER_URL || !navigator.onLine) return;
+  try {
+    if (!cloudToken) await cloudAuth();
+    if (!cloudToken) return;
+
+    const clients = await dbGetAllClients();
+    if (!clients.length) return;
+
+    // Strip base64 photos before sending to keep payload small
+    const payload = clients.map(c => ({
+      id: c.id,
+      updated_at: c.updated_at || Date.now(),
+      data: JSON.stringify({
+        ...c,
+        photos: (c.photos || []).map(() => '[photo]'),
+      }),
+    }));
+
+    await fetch(`${WORKER_URL}/api/clients/sync`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${cloudToken}`,
+      },
+      body: JSON.stringify({ clients: payload }),
+    });
+  } catch (e) {}
+}
+
+// Pull clients from D1, merge with local using last-write-wins
+async function pullClients() {
+  if (!WORKER_URL || !navigator.onLine) return;
+  try {
+    if (!cloudToken) await cloudAuth();
+    if (!cloudToken) return;
+
+    const res = await fetch(`${WORKER_URL}/api/clients/sync`, {
+      headers: { 'Authorization': `Bearer ${cloudToken}` },
+    });
+    if (!res.ok) return;
+
+    const { clients: remote } = await res.json();
+    if (!remote || !remote.length) return;
+
+    let changed = false;
+    for (const remoteRec of remote) {
+      const local = await dbGetClient(remoteRec.id);
+      const remoteData = JSON.parse(remoteRec.data || '{}');
+
+      if (!local) {
+        // New record from cloud — add locally (keep [photo] placeholders)
+        await dbPutClient({ ...remoteData, photos: local?.photos || [] });
+        changed = true;
+      } else if (remoteRec.updated_at > (local.updated_at || 0)) {
+        // Cloud is newer — update local, preserve local photos (not yet in B2)
+        await dbPutClient({ ...remoteData, photos: local.photos || [] });
+        changed = true;
+      }
+      // Local is newer or equal — local wins, push will handle it
+    }
+
+    return changed;
+  } catch (e) {}
+}
+
+// Full two-way sync — push local first, then pull remote
+// Called on login, tab switch, and every 5 minutes
+async function fullSync() {
+  if (!WORKER_URL || !navigator.onLine) return;
+  updateSyncIndicator('syncing');
+  try {
+    await cloudAuth();
+    // Run both in parallel for speed
+    await Promise.all([
+      syncToCloud(),   // push inspection projects
+      pushClients(),   // push CRM clients
+    ]);
+    const clientsChanged = await pullClients();  // pull remote clients
+
+    updateSyncIndicator('synced');
+
+    // If pull brought in new/updated clients, refresh visible screens
+    if (clientsChanged) {
+      if (document.getElementById('screen-clients').classList.contains('active')) {
+        loadCRMClients();
+      }
+      if (document.getElementById('screen-home').classList.contains('active')) {
+        loadHome();
+      }
+      // Refresh current client detail if it was updated
+      if (currentClient) {
+        const updated = await dbGetClient(currentClient.id);
+        if (updated && updated.updated_at > currentClient.updated_at) {
+          currentClient = updated;
+          renderClientDetail(updated);
+          renderStageStepper(updated.stage);
+        }
+      }
+    }
+  } catch (e) {
+    updateSyncIndicator('offline');
+  }
+}
+
+// ── SYNC TRIGGERS ─────────────────────────────────────────────────────────────
+
+// Every 5 minutes while app is open
+let syncInterval = null;
+function startSyncInterval() {
+  if (syncInterval) clearInterval(syncInterval);
+  syncInterval = setInterval(() => {
+    fullSync().catch(() => {});
+  }, 5 * 60 * 1000);
+}
+
 function updateSyncIndicator(state) {
   const dot = document.getElementById('syncDot');
+  if (!dot) return;
+  dot.classList.remove('online', 'syncing');
   if (state === 'synced') {
     dot.classList.add('online');
     dot.title = 'Synced to cloud';
   } else if (state === 'syncing') {
     dot.classList.add('syncing');
     dot.title = 'Syncing...';
+  } else {
+    dot.title = 'Offline — data saved locally';
   }
 }
 
-// Delete from cloud too
+// Delete project from cloud
 async function cloudDelete(projectId) {
   if (!WORKER_URL || !navigator.onLine) return;
   try {
     if (!cloudToken) await cloudAuth();
     if (!cloudToken) return;
     await fetch(`${WORKER_URL}/api/projects/${projectId}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${cloudToken}` },
+    });
+  } catch {}
+}
+
+// Delete client from cloud
+async function cloudDeleteClient(clientId) {
+  if (!WORKER_URL || !navigator.onLine) return;
+  try {
+    if (!cloudToken) await cloudAuth();
+    if (!cloudToken) return;
+    await fetch(`${WORKER_URL}/api/clients/${clientId}`, {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${cloudToken}` },
     });
@@ -1996,6 +2135,10 @@ function showTab(tab) {
   if (tab === 'projects') loadAllProjects();
   if (tab === 'settings') loadSettings();
   if (tab === 'clients') { currentStageFilter = 'all'; loadCRMClients(); }
+  // Sync on tab switch to home or clients
+  if ((tab === 'home' || tab === 'clients') && isAuthenticated) {
+    fullSync().catch(() => {});
+  }
 }
 
 function goBack() {
@@ -2018,9 +2161,12 @@ function updateOnlineStatus() {
 }
 window.addEventListener('online', () => {
   updateOnlineStatus();
-  syncToCloud().catch(() => {});   // push any queued changes when signal returns
+  fullSync().catch(() => {}); // full two-way sync when signal returns
 });
-window.addEventListener('offline', updateOnlineStatus);
+window.addEventListener('offline', () => {
+  updateOnlineStatus();
+  updateSyncIndicator('offline');
+});
 
 // ── HOME ──
 async function loadHome() {
@@ -3270,7 +3416,10 @@ function autosaveClient() {
   if (!currentClient) return;
   currentClient.updated_at = Date.now();
   clearTimeout(clientSaveTimer);
-  clientSaveTimer = setTimeout(() => dbPutClient(currentClient), 800);
+  clientSaveTimer = setTimeout(async () => {
+    await dbPutClient(currentClient);
+    pushClients().catch(() => {}); // background push
+  }, 800);
 }
 
 // ── NOTES ──
@@ -3458,6 +3607,7 @@ function confirmDeleteClient(id) {
   document.getElementById('confirmMsg').textContent = 'This will permanently delete this client, their quote, notes, and photos.';
   document.getElementById('confirmBtn').onclick = async () => {
     await dbDelClient(id);
+    cloudDeleteClient(id).catch(() => {}); // remove from D1
     closeModal('confirmModal');
     showToast('Client deleted', 'info');
     currentClient = null;
