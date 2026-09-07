@@ -3009,10 +3009,18 @@ function confirmClearData() {
 let toastTimer = null;
 function showToast(msg, type = 'info') {
   const el = document.getElementById('toast');
+  // Reset completely first to restart the CSS transition cleanly
+  el.className = 'toast';
   el.textContent = msg;
+  // Force reflow so the transition fires even if called back-to-back
+  void el.offsetWidth;
   el.className = `toast ${type} show`;
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => { el.classList.remove('show'); }, 2800);
+  toastTimer = setTimeout(() => {
+    el.classList.remove('show');
+    // Clean up type class after transition completes (300ms)
+    setTimeout(() => { el.className = 'toast'; }, 350);
+  }, 2800);
 }
 
 // ── SERVICE WORKER REGISTRATION ──
