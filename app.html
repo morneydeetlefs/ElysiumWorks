@@ -1242,7 +1242,7 @@ body::before {
         <div class="topbar-brand">✦ Elysium Works</div>
         <div class="topbar-sub">Inspection System</div>
       </div>
-      <div class="sync-dot" id="syncDot" title="Tap to sync now" onclick="manualSync()"></div>
+      <div class="sync-dot sync-dot-all" id="syncDot" title="Tap to sync now" onclick="manualSync()"></div>
       <button onclick="doLogout()" style="background:none;border:none;color:var(--md-muted);font-size:.7rem;font-family:'Syne Mono',monospace;letter-spacing:.1em;cursor:pointer;padding:.4rem">LOCK</button>
     </div>
 
@@ -1366,10 +1366,11 @@ body::before {
   <div class="screen" id="screen-summary">
     <div class="topbar">
       <button class="back-btn" onclick="showScreen('checklist')">‹</button>
-      <div>
+      <div style="flex:1">
         <div class="topbar-brand">Inspection Report</div>
         <div class="topbar-sub" id="sum-address-top">Address</div>
       </div>
+      <div class="sync-dot sync-dot-all" title="Tap to sync now" onclick="manualSync()"></div>
     </div>
     <div class="scroll-content" id="summaryContent"></div>
   </div>
@@ -1377,10 +1378,11 @@ body::before {
   <!-- ════ PROJECTS SCREEN ════ -->
   <div class="screen" id="screen-projects">
     <div class="topbar">
-      <div>
+      <div style="flex:1">
         <div class="topbar-brand">All Reports</div>
         <div class="topbar-sub">Inspection history</div>
       </div>
+      <div class="sync-dot sync-dot-all" title="Tap to sync now" onclick="manualSync()"></div>
     </div>
     <div class="scroll-content" id="allProjectsList"></div>
     <nav class="bottom-nav">
@@ -1414,10 +1416,11 @@ body::before {
   <!-- ════ SETTINGS SCREEN ════ -->
   <div class="screen" id="screen-settings">
     <div class="topbar">
-      <div>
+      <div style="flex:1">
         <div class="topbar-brand">Settings</div>
         <div class="topbar-sub">Configuration</div>
       </div>
+      <div class="sync-dot sync-dot-all" title="Tap to sync now" onclick="manualSync()"></div>
     </div>
     <div class="scroll-content">
       <div class="section-eyebrow">Company Details</div>
@@ -1495,6 +1498,7 @@ body::before {
         <div class="topbar-brand">✦ Clients</div>
         <div class="topbar-sub">Pipeline & job history</div>
       </div>
+      <div class="sync-dot sync-dot-all" title="Tap to sync now" onclick="manualSync()"></div>
       <button onclick="openNewClientModal()" style="background:linear-gradient(135deg,var(--md-gold-dk),var(--md-gold));color:var(--md-black);border:none;border-radius:var(--md-radius);font-family:'Cinzel',serif;font-size:.7rem;font-weight:600;letter-spacing:.1em;padding:.5rem .85rem;cursor:pointer">+ New</button>
     </div>
     <div class="pipeline-scroll-wrap">
@@ -1540,6 +1544,7 @@ body::before {
         <div class="detail-name" id="det-name">Client Name</div>
         <div class="detail-phone" id="det-phone">Phone</div>
       </div>
+      <div class="sync-dot sync-dot-all" title="Tap to sync now" onclick="manualSync()"></div>
       <button onclick="openClientWA()" style="background:#25D366;border:none;border-radius:var(--md-radius);padding:.5rem .7rem;cursor:pointer;font-size:1rem">💬</button>
     </div>
 
@@ -2087,18 +2092,19 @@ async function manualSync() {
 }
 
 function updateSyncIndicator(state) {
-  const dot = document.getElementById('syncDot');
-  if (!dot) return;
-  dot.classList.remove('online', 'syncing');
-  if (state === 'synced') {
-    dot.classList.add('online');
-    dot.title = 'Synced to cloud';
-  } else if (state === 'syncing') {
-    dot.classList.add('syncing');
-    dot.title = 'Syncing...';
-  } else {
-    dot.title = 'Offline — data saved locally';
-  }
+  const dots = document.querySelectorAll('.sync-dot-all');
+  dots.forEach(dot => {
+    dot.classList.remove('online', 'syncing');
+    if (state === 'synced') {
+      dot.classList.add('online');
+      dot.title = 'Synced — tap to sync again';
+    } else if (state === 'syncing') {
+      dot.classList.add('syncing');
+      dot.title = 'Syncing...';
+    } else {
+      dot.title = 'Offline — data saved locally';
+    }
+  });
 }
 
 // Delete project from cloud
@@ -2163,15 +2169,17 @@ function goBack() {
 
 // ── ONLINE STATUS ──
 function updateOnlineStatus() {
-  const dot = document.getElementById('syncDot');
-  if (navigator.onLine) {
-    dot.classList.add('online');
-    dot.classList.remove('syncing');
-    dot.title = 'Online';
-  } else {
-    dot.classList.remove('online', 'syncing');
-    dot.title = 'Offline — data saved locally';
-  }
+  const dots = document.querySelectorAll('.sync-dot-all');
+  dots.forEach(dot => {
+    if (navigator.onLine) {
+      dot.classList.add('online');
+      dot.classList.remove('syncing');
+      dot.title = 'Online — tap to sync';
+    } else {
+      dot.classList.remove('online', 'syncing');
+      dot.title = 'Offline — data saved locally';
+    }
+  });
 }
 window.addEventListener('online', () => {
   updateOnlineStatus();
