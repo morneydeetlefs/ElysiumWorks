@@ -848,11 +848,15 @@ body::before {
 
 /* ══ SYNC INDICATOR ══ */
 .sync-dot {
-  width: 7px; height: 7px;
+  width: 10px; height: 10px;
   border-radius: 50%;
   background: var(--md-muted);
   flex-shrink: 0;
+  cursor: pointer;
+  transition: transform .15s;
+  -webkit-tap-highlight-color: transparent;
 }
+.sync-dot:active { transform: scale(1.5); }
 .sync-dot.online { background: var(--md-success); }
 .sync-dot.syncing { background: var(--md-warn); animation: pulse 1s infinite; }
 @keyframes pulse {
@@ -1238,7 +1242,7 @@ body::before {
         <div class="topbar-brand">✦ Elysium Works</div>
         <div class="topbar-sub">Inspection System</div>
       </div>
-      <div class="sync-dot" id="syncDot" title="Offline"></div>
+      <div class="sync-dot" id="syncDot" title="Tap to sync now" onclick="manualSync()"></div>
       <button onclick="doLogout()" style="background:none;border:none;color:var(--md-muted);font-size:.7rem;font-family:'Syne Mono',monospace;letter-spacing:.1em;cursor:pointer;padding:.4rem">LOCK</button>
     </div>
 
@@ -2070,6 +2074,16 @@ function startSyncInterval() {
   syncInterval = setInterval(() => {
     fullSync().catch(() => {});
   }, 5 * 60 * 1000);
+}
+
+async function manualSync() {
+  if (!navigator.onLine) {
+    showToast('No connection — data saved locally', 'error');
+    return;
+  }
+  showToast('Syncing...', 'info');
+  await fullSync();
+  showToast('All data synced', 'success');
 }
 
 function updateSyncIndicator(state) {
