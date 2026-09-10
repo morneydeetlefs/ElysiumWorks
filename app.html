@@ -16,7 +16,7 @@ window.addEventListener('DOMContentLoaded', function() {
   const MANIFEST = {
     name: "Elysium Works Inspection",
     short_name: "EW Inspect",
-    start_url: "/app.html",
+    start_url: location.origin + "/app.html",
     display: "standalone",
     background_color: "#0a0906",
     theme_color: "#0a0906",
@@ -181,7 +181,10 @@ body::before {
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
   padding: 1rem;
+  will-change: scroll-position;
+  outline: none;
 }
 .scroll-content::-webkit-scrollbar { display: none; }
 
@@ -1545,6 +1548,7 @@ body::before {
         <div class="detail-phone" id="det-phone">Phone</div>
       </div>
       <div class="sync-dot sync-dot-all" title="Tap to sync now" onclick="manualSync()"></div>
+      <button onclick="openEditClientModal()" style="background:var(--md-surface);border:1px solid var(--md-border);border-radius:var(--md-radius);padding:.5rem .7rem;cursor:pointer;font-size:1rem" title="Edit client info">✏️</button>
       <button onclick="openClientWA()" style="background:#25D366;border:none;border-radius:var(--md-radius);padding:.5rem .7rem;cursor:pointer;font-size:1rem">💬</button>
     </div>
 
@@ -1589,6 +1593,49 @@ body::before {
       <div class="btn-row">
         <button class="btn-secondary" onclick="closeModal('newClientModal')">Cancel</button>
         <button class="btn-primary" onclick="saveNewClient()" style="flex:2">Add Client</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- EDIT CLIENT MODAL -->
+  <div class="modal-overlay" id="editClientModal">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-title">Edit Client</div>
+      <div class="form-group">
+        <label class="form-label">Full Name</label>
+        <input class="form-input" id="ec-name" type="text" autocomplete="off"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Phone / WhatsApp</label>
+        <input class="form-input" id="ec-phone" type="tel"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input class="form-input" id="ec-email" type="email" placeholder="optional"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Area</label>
+        <select class="form-input" id="ec-area">
+          <option>Elysium / Ifafa</option><option>Mtwalumi</option><option>Bazley</option>
+          <option>Pennington / Umzumbe</option><option>Hibberdene / Umzinto</option>
+          <option>Scottburgh / Park Rynie</option><option>Port Shepstone / further</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Job Type</label>
+        <input class="form-input" id="ec-job" type="text" placeholder="e.g. Geyser replacement"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Source</label>
+        <select class="form-input" id="ec-source">
+          <option>WhatsApp enquiry</option><option>Website booking form</option>
+          <option>Referral</option><option>Repeat client</option><option>Other</option>
+        </select>
+      </div>
+      <div class="btn-row">
+        <button class="btn-secondary" onclick="closeModal('editClientModal')">Cancel</button>
+        <button class="btn-primary" onclick="saveEditClient()" style="flex:2">Save Changes</button>
       </div>
     </div>
   </div>
@@ -2147,7 +2194,20 @@ document.getElementById('authPin').addEventListener('keydown', e => {
 // ── NAVIGATION ──
 function showScreen(name) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById('screen-' + name).classList.add('active');
+  const screen = document.getElementById('screen-' + name);
+  screen.classList.add('active');
+
+  // Reset scroll position and explicitly focus the scroll container so
+  // mousewheel events are captured correctly without needing a hard refresh
+  requestAnimationFrame(() => {
+    const scrollEl = screen.querySelector('.scroll-content');
+    if (scrollEl) {
+      scrollEl.scrollTop = 0;
+      // Temporarily set tabindex so it can receive focus (and thus wheel events)
+      if (!scrollEl.hasAttribute('tabindex')) scrollEl.setAttribute('tabindex', '-1');
+      scrollEl.focus({ preventScroll: true });
+    }
+  });
 }
 
 function showTab(tab) {
@@ -3179,7 +3239,16 @@ function calcClientTotal(c) {
   const callout = parseFloat(q.callout) || 0;
   const labour = (q.labour || []).reduce((s,l) => s + (parseFloat(l.amount)||0), 0);
   const parts  = (q.parts  || []).reduce((s,l) => s + (parseFloat(l.amount)||0), 0);
-  return callout + labour + parts;
+  const subtotal = callout + labour + parts;
+  const discountAmt = calcDiscount(q, subtotal);
+  return subtotal - discountAmt;
+}
+
+function calcDiscount(q, subtotal) {
+  if (!q.discountType || !q.discountValue) return 0;
+  const val = parseFloat(q.discountValue) || 0;
+  if (q.discountType === 'pct') return Math.round((subtotal * val / 100) * 100) / 100;
+  return Math.min(val, subtotal); // rand — can't discount more than subtotal
 }
 
 // ── NEW CLIENT ──
@@ -3202,7 +3271,7 @@ async function saveNewClient() {
     job_type: document.getElementById('nc-job').value.trim(),
     source: document.getElementById('nc-source').value,
     stage: 'enquiry',
-    quote: { callout: 50, labour: [], parts: [] },
+    quote: { callout: 50, labour: [], parts: [], discountType: '', discountValue: '', deposit: '', terms: '', scope: '' },
     notes: [],
     photos: [],
     created_at: Date.now(),
@@ -3230,6 +3299,47 @@ async function openClientDetail(clientId) {
   renderStageStepper(client.stage);
   renderClientDetail(client);
   showScreen('client-detail');
+}
+
+function openEditClientModal() {
+  if (!currentClient) return;
+  const c = currentClient;
+  document.getElementById('ec-name').value  = c.name  || '';
+  document.getElementById('ec-phone').value = c.phone || '';
+  document.getElementById('ec-email').value = c.email || '';
+  document.getElementById('ec-job').value   = c.job_type || '';
+  // Set area select
+  const areaEl = document.getElementById('ec-area');
+  [...areaEl.options].forEach(o => { o.selected = o.value === c.area; });
+  // Set source select
+  const srcEl = document.getElementById('ec-source');
+  [...srcEl.options].forEach(o => { o.selected = o.value === c.source; });
+  openModal('editClientModal');
+}
+
+async function saveEditClient() {
+  const name  = document.getElementById('ec-name').value.trim();
+  const phone = document.getElementById('ec-phone').value.trim();
+  if (!name) { showToast('Name is required', 'error'); return; }
+
+  currentClient.name     = name;
+  currentClient.phone    = phone;
+  currentClient.email    = document.getElementById('ec-email').value.trim();
+  currentClient.area     = document.getElementById('ec-area').value;
+  currentClient.job_type = document.getElementById('ec-job').value.trim();
+  currentClient.source   = document.getElementById('ec-source').value;
+  currentClient.updated_at = Date.now();
+
+  await dbPutClient(currentClient);
+
+  // Refresh header
+  document.getElementById('det-avatar').textContent = name.charAt(0).toUpperCase();
+  document.getElementById('det-name').textContent   = name;
+  document.getElementById('det-phone').textContent  = phone || 'No phone';
+
+  renderClientDetail(currentClient);
+  closeModal('editClientModal');
+  showToast('Client updated', 'success');
 }
 
 function renderStageStepper(activeStage) {
@@ -3319,8 +3429,61 @@ function renderClientDetail(client) {
     <button class="add-line-btn" onclick="addPartsLine()">+ Add part / material</button>
   </div>
 
+  <!-- Discount -->
+  <div class="quote-section">
+    <div class="quote-section-title">Discount</div>
+    <div class="line-item">
+      <select class="line-desc" id="q-discount-type" style="flex:0 0 110px;font-family:'Syne Mono',monospace;font-size:.72rem"
+        onchange="updateQuoteField('discountType',this.value)">
+        <option value="" ${!q.discountType?'selected':''}>No discount</option>
+        <option value="rand" ${q.discountType==='rand'?'selected':''}>Rand (R)</option>
+        <option value="pct" ${q.discountType==='pct'?'selected':''}>Percent (%)</option>
+      </select>
+      <input class="line-amount" type="number" inputmode="decimal" placeholder="0" id="q-discount-val"
+        value="${q.discountValue||''}"
+        onchange="updateQuoteField('discountValue',this.value)" oninput="updateQuoteField('discountValue',this.value)"
+        style="${!q.discountType?'opacity:.35':''}"
+        ${!q.discountType?'disabled':''}/>
+    </div>
+  </div>
+
   <!-- Totals -->
   <div class="quote-totals" id="quoteTotals"></div>
+
+  <!-- Scope / Description -->
+  <div class="quote-section">
+    <div class="quote-section-title">Scope / Project Description</div>
+    <textarea class="form-input" rows="3" placeholder="Describe the work to be done — this prints on the quote/invoice..."
+      style="font-size:.82rem;resize:none"
+      onchange="updateQuoteField('scope',this.value)" oninput="updateQuoteField('scope',this.value)">${q.scope||''}</textarea>
+  </div>
+
+  <!-- Deposit & Terms -->
+  <div class="quote-section">
+    <div class="quote-section-title">Deposit Required</div>
+    <div class="line-item">
+      <input class="line-desc" type="text" placeholder="e.g. 50% deposit to confirm booking" value="${q.deposit||''}"
+        onchange="updateQuoteField('deposit',this.value)" oninput="updateQuoteField('deposit',this.value)"/>
+    </div>
+  </div>
+
+  <div class="quote-section">
+    <div class="quote-section-title">Payment Terms</div>
+    <textarea class="form-input" rows="2" placeholder="e.g. Balance due on completion. EFT or cash accepted."
+      style="font-size:.82rem;resize:none"
+      onchange="updateQuoteField('terms',this.value)" oninput="updateQuoteField('terms',this.value)">${q.terms||''}</textarea>
+  </div>
+
+  <!-- Validity -->
+  <div class="quote-section">
+    <div class="quote-section-title">Quote Validity</div>
+    <div class="line-item">
+      <input class="line-desc" type="date" id="q-valid-until" value="${q.validUntil||''}"
+        style="font-family:'Syne Mono',monospace;font-size:.78rem"
+        onchange="updateQuoteField('validUntil',this.value)"/>
+      <span style="font-family:'Syne Mono',monospace;font-size:.65rem;color:var(--md-muted);flex-shrink:0;align-self:center">Valid until</span>
+    </div>
+  </div>
 
   <!-- Action buttons -->
   <div style="display:flex;gap:.6rem;margin-bottom:.75rem">
@@ -3422,13 +3585,34 @@ function removeLine(type, idx) {
   renderClientDetail(currentClient); // re-render to reindex
 }
 
+function updateQuoteField(field, val) {
+  if (!currentClient.quote) currentClient.quote = { callout:50, labour:[], parts:[], discountType:'', discountValue:'', deposit:'', terms:'', scope:'', validUntil:'' };
+  currentClient.quote[field] = val;
+  // Enable/disable discount value input when type changes
+  if (field === 'discountType') {
+    const valEl = document.getElementById('q-discount-val');
+    if (valEl) {
+      valEl.disabled = !val;
+      valEl.style.opacity = val ? '1' : '.35';
+      if (!val) { valEl.value = ''; currentClient.quote.discountValue = ''; }
+    }
+  }
+  updateQuoteTotals();
+  autosaveClient();
+}
+
 function updateQuoteTotals() {
   const q = currentClient.quote || {};
-  const callout = parseFloat(q.callout) || 0;
-  const labour  = (q.labour||[]).reduce((s,l) => s+(parseFloat(l.amount)||0), 0);
-  const parts   = (q.parts||[]).reduce((s,l)  => s+(parseFloat(l.amount)||0), 0);
-  const total   = callout + labour + parts;
-  const vat     = Math.round(total * 0.15 * 100) / 100;
+  const callout  = parseFloat(q.callout) || 0;
+  const labour   = (q.labour||[]).reduce((s,l) => s+(parseFloat(l.amount)||0), 0);
+  const parts    = (q.parts||[]).reduce((s,l)  => s+(parseFloat(l.amount)||0), 0);
+  const subtotal = callout + labour + parts;
+  const discAmt  = calcDiscount(q, subtotal);
+  const total    = subtotal - discAmt;
+
+  const discLabel = q.discountType === 'pct'
+    ? `Discount (${q.discountValue||0}%)`
+    : q.discountType === 'rand' ? 'Discount' : null;
 
   const el = document.getElementById('quoteTotals');
   if (!el) return;
@@ -3436,7 +3620,8 @@ function updateQuoteTotals() {
     <div class="total-line"><span class="tl-label">Callout</span><span class="tl-val">R ${callout.toLocaleString('en-ZA')}</span></div>
     <div class="total-line"><span class="tl-label">Labour</span><span class="tl-val">R ${labour.toLocaleString('en-ZA')}</span></div>
     <div class="total-line"><span class="tl-label">Parts & Materials</span><span class="tl-val">R ${parts.toLocaleString('en-ZA')}</span></div>
-    <div class="total-line"><span class="tl-label">Subtotal (excl. VAT)</span><span class="tl-val">R ${total.toLocaleString('en-ZA')}</span></div>
+    <div class="total-line"><span class="tl-label">Subtotal</span><span class="tl-val">R ${subtotal.toLocaleString('en-ZA')}</span></div>
+    ${discAmt > 0 ? `<div class="total-line"><span class="tl-label" style="color:var(--md-success)">${discLabel}</span><span class="tl-val" style="color:var(--md-success)">-R ${discAmt.toLocaleString('en-ZA')}</span></div>` : ''}
     <div class="total-line grand"><span class="tl-label">Total</span><span class="tl-val">R ${total.toLocaleString('en-ZA')}</span></div>
     <div style="font-size:.68rem;color:var(--md-muted);margin-top:.4rem">VAT not registered — no VAT charged</div>`;
 }
@@ -3477,20 +3662,33 @@ function openClientWA() {
 function sendQuoteWhatsApp() {
   if (!currentClient) return;
   const q = currentClient.quote || {};
-  const callout = parseFloat(q.callout)||0;
-  const labour  = (q.labour||[]).reduce((s,l)=>s+(parseFloat(l.amount)||0),0);
-  const parts   = (q.parts||[]).reduce((s,l) =>s+(parseFloat(l.amount)||0),0);
-  const total   = callout + labour + parts;
+  const callout  = parseFloat(q.callout)||0;
+  const labour   = (q.labour||[]).reduce((s,l)=>s+(parseFloat(l.amount)||0),0);
+  const parts    = (q.parts||[]).reduce((s,l) =>s+(parseFloat(l.amount)||0),0);
+  const subtotal = callout + labour + parts;
+  const discAmt  = calcDiscount(q, subtotal);
+  const total    = subtotal - discAmt;
 
-  const settingsRec = currentClient; // use co from settings if available
   let msg = `Hi ${currentClient.name} 👋\n\nHere's your quote from *Elysium Works*:\n\n`;
   msg += `*Job:* ${currentClient.job_type||'Service'}\n`;
   msg += `*Area:* ${currentClient.area||''}\n\n`;
+  if (q.scope && q.scope.trim()) msg += `_${q.scope.trim()}_\n\n`;
   if (callout) msg += `• Callout fee: R${callout}\n`;
   (q.labour||[]).forEach(l => { if(l.desc||l.amount) msg += `• ${l.desc||'Labour'}: R${l.amount||0}\n`; });
   (q.parts||[]).forEach(l  => { if(l.desc||l.amount) msg += `• ${l.desc||'Part'}: R${l.amount||0}\n`; });
+  if (discAmt > 0) {
+    const discLabel = q.discountType === 'pct' ? `Discount (${q.discountValue}%)` : 'Discount';
+    msg += `• ${discLabel}: -R${discAmt.toLocaleString('en-ZA')}\n`;
+  }
   msg += `\n*Total: R${total.toLocaleString('en-ZA')}*\n\n`;
-  msg += `Please confirm if you'd like to proceed.\n\nThanks — Morney\n071 818 1132`;
+  if (q.deposit && q.deposit.trim()) msg += `💰 *Deposit:* ${q.deposit.trim()}\n`;
+  if (q.terms && q.terms.trim()) msg += `📋 *Terms:* ${q.terms.trim()}\n`;
+  if (q.validUntil) {
+    const validStr = new Date(q.validUntil).toLocaleDateString('en-ZA',{day:'numeric',month:'long',year:'numeric'});
+    msg += `⏳ *Valid until:* ${validStr}\n`;
+  }
+  msg += `\n🏦 *EFT:* Monique Deetlefs · ABSA · 9347485805 · Branch 632005\n`;
+  msg += `\nPlease confirm if you'd like to proceed.\n\nThanks — Morney\n071 818 1132`;
 
   const clean = (currentClient.phone||'').replace(/\D/g,'');
   const num = clean.startsWith('0') ? '27'+clean.slice(1) : clean;
@@ -3504,19 +3702,21 @@ async function generateQuotePDF(isInvoice) {
   const { jsPDF } = window.jspdf;
   const client = currentClient;
   const q = client.quote || {};
-  const callout = parseFloat(q.callout)||0;
-  const labour  = (q.labour||[]).filter(l => l.desc||l.amount);
-  const parts   = (q.parts||[]).filter(l  => l.desc||l.amount);
-  const total   = callout + labour.reduce((s,l)=>s+(parseFloat(l.amount)||0),0)
-                          + parts.reduce((s,l) =>s+(parseFloat(l.amount)||0),0);
+  const callout  = parseFloat(q.callout)||0;
+  const labour   = (q.labour||[]).filter(l => l.desc||l.amount);
+  const parts    = (q.parts||[]).filter(l  => l.desc||l.amount);
+  const subtotal = callout + labour.reduce((s,l)=>s+(parseFloat(l.amount)||0),0)
+                           + parts.reduce((s,l) =>s+(parseFloat(l.amount)||0),0);
+  const discAmt  = calcDiscount(q, subtotal);
+  const total    = subtotal - discAmt;
 
   const doc = new jsPDF({ unit:'mm', format:'a4' });
   const W = 210; const M = 18;
   let y = 0;
 
-  const hex = hex => { const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16); return [r,g,b]; };
+  const hex = h => { const r=parseInt(h.slice(1,3),16),g=parseInt(h.slice(3,5),16),b=parseInt(h.slice(5,7),16); return [r,g,b]; };
 
-  // Header
+  // ── HEADER ──
   doc.setFillColor(...hex('#264736')); doc.rect(0,0,W,50,'F');
   doc.setFillColor(...hex('#0a0906')); doc.rect(0,0,6,297,'F');
   doc.setTextColor(...hex('#e8c87a'));
@@ -3534,12 +3734,17 @@ async function generateQuotePDF(isInvoice) {
   doc.setFontSize(8);
   doc.text(dateStr, W-M, 22, {align:'right'});
   doc.text(`Ref: ${ref}`, W-M, 29, {align:'right'});
+  if (q.validUntil && !isInvoice) {
+    const validStr = new Date(q.validUntil).toLocaleDateString('en-ZA',{day:'numeric',month:'long',year:'numeric'});
+    doc.text(`Valid until: ${validStr}`, W-M, 36, {align:'right'});
+  }
 
   y = 60;
-  // Client box
+
+  // ── CLIENT BOX ──
   doc.setFillColor(...hex('#1a1610')); doc.roundedRect(M,y,W-M*2,28,3,3,'F');
   doc.setDrawColor(...hex('#3d3526')); doc.roundedRect(M,y,W-M*2,28,3,3,'S');
-  doc.setTextColor(...hex('#7a5815')); doc.setFontSize(6.5);
+  doc.setTextColor(...hex('#7a5815')); doc.setFontSize(6.5); doc.setFont('helvetica','normal');
   doc.text('CLIENT', M+5, y+8);
   doc.setTextColor(...hex('#f0e6ce')); doc.setFontSize(11); doc.setFont('helvetica','bold');
   doc.text(client.name, M+5, y+16);
@@ -3554,26 +3759,37 @@ async function generateQuotePDF(isInvoice) {
 
   y += 36;
 
-  // Line items table
+  // ── SCOPE / PROJECT DESCRIPTION ──
+  if (q.scope && q.scope.trim()) {
+    doc.setFillColor(...hex('#111108')); doc.rect(M,y,W-M*2,6,'F');
+    doc.setTextColor(...hex('#7a5815')); doc.setFontSize(6.5); doc.setFont('helvetica','bold');
+    doc.text('SCOPE OF WORK', M+4, y+4.2);
+    y += 8;
+    // placeholder line removed — rect drawn below with correct height
+    doc.setTextColor(40,40,40); doc.setFontSize(8.5); doc.setFont('helvetica','normal');
+    const scopeLines = doc.splitTextToSize(q.scope.trim(), W-M*2-8);
+    const scopeH = scopeLines.length * 5.5 + 6;
+    doc.setFillColor(255,255,255); doc.rect(M,y,W-M*2,scopeH,'F');
+    doc.setDrawColor(220,220,215); doc.rect(M,y,W-M*2,scopeH,'S');
+    doc.text(scopeLines, M+4, y+5.5);
+    y += scopeH + 4;
+  }
+
+  // ── LINE ITEMS ──
   const addSection = (title, lines) => {
     if (!lines.length) return;
-    // Section header — keep dark brand style
     doc.setFillColor(...hex('#264736')); doc.rect(M,y,W-M*2,8,'F');
     doc.setDrawColor(...hex('#3A6B4F')); doc.rect(M,y,3,8,'F');
     doc.setTextColor(255,255,255); doc.setFontSize(7.5); doc.setFont('helvetica','bold');
     doc.text(title, M+6, y+5.5);
     y += 10;
     lines.forEach(l => {
-      // White row background
-      doc.setFillColor(255,255,255); doc.rect(M, y, W-M*2, 9, 'F');
-      // Description — dark, readable
+      doc.setFillColor(255,255,255); doc.rect(M,y,W-M*2,9,'F');
       doc.setTextColor(30,30,30); doc.setFontSize(9); doc.setFont('helvetica','normal');
       const descLines = doc.splitTextToSize(l.desc||title, W-M*2-35);
       doc.text(descLines, M+4, y+6);
-      // Amount — dark green, bold
       doc.setTextColor(...hex('#1e5c38')); doc.setFont('helvetica','bold'); doc.setFontSize(9);
       doc.text(`R ${(parseFloat(l.amount)||0).toLocaleString('en-ZA')}`, W-M-2, y+6, {align:'right'});
-      // Separator line
       doc.setDrawColor(220,220,215);
       doc.line(M, y+9, W-M, y+9);
       y += descLines.length*5 + 5;
@@ -3585,25 +3801,111 @@ async function generateQuotePDF(isInvoice) {
   addSection('LABOUR', labour);
   addSection('PARTS & MATERIALS', parts);
 
-  // Total box
-  y += 4;
-  doc.setFillColor(...hex('#1a1610')); doc.roundedRect(M,y,W-M*2,22,3,3,'F');
-  doc.setDrawColor(...hex('#c9943c')); doc.roundedRect(M,y,W-M*2,22,3,3,'S');
-  doc.setTextColor(...hex('#7a5815')); doc.setFontSize(7); doc.setFont('helvetica','normal');
-  doc.text('TOTAL AMOUNT', M+6, y+9);
-  doc.setTextColor(...hex('#e8c87a')); doc.setFontSize(16); doc.setFont('helvetica','bold');
-  doc.text(`R ${total.toLocaleString('en-ZA')}`, W-M-4, y+15, {align:'right'});
-  doc.setTextColor(...hex('#7a5815')); doc.setFontSize(6.5); doc.setFont('helvetica','normal');
-  doc.text('VAT not registered — no VAT charged', M+6, y+17);
+  // ── TOTALS BOX ──
+  y += 2;
+  const totalsH = discAmt > 0 ? 36 : 28;
+  doc.setFillColor(...hex('#1a1610')); doc.roundedRect(M,y,W-M*2,totalsH,3,3,'F');
+  doc.setDrawColor(...hex('#c9943c')); doc.roundedRect(M,y,W-M*2,totalsH,3,3,'S');
 
-  if (!isInvoice) {
-    y += 30;
-    doc.setTextColor(...hex('#7a6d58')); doc.setFontSize(7.5); doc.setFont('helvetica','italic');
-    doc.text('This quotation is valid for 30 days. A 50% deposit is required to confirm the booking.', M, y);
-    doc.text('Parts are sourced at cost — final invoice may vary slightly if parts prices change.', M, y+6);
+  let ty = y + 8;
+  // Subtotal
+  doc.setTextColor(...hex('#7a5815')); doc.setFontSize(7.5); doc.setFont('helvetica','normal');
+  doc.text('SUBTOTAL', M+6, ty);
+  doc.setTextColor(...hex('#c9943c')); doc.setFont('helvetica','normal');
+  doc.text(`R ${subtotal.toLocaleString('en-ZA')}`, W-M-4, ty, {align:'right'});
+  ty += 7;
+
+  // Discount line (only if applicable)
+  if (discAmt > 0) {
+    const discLabel = q.discountType === 'pct'
+      ? `DISCOUNT (${q.discountValue}%)`
+      : 'DISCOUNT';
+    doc.setTextColor(...hex('#4caf7a')); doc.setFontSize(7.5); doc.setFont('helvetica','normal');
+    doc.text(discLabel, M+6, ty);
+    doc.text(`-R ${discAmt.toLocaleString('en-ZA')}`, W-M-4, ty, {align:'right'});
+    // Divider
+    doc.setDrawColor(...hex('#2c2619'));
+    doc.line(M+4, ty+2.5, W-M-4, ty+2.5);
+    ty += 9;
   }
 
-  // Footer on all pages
+  // Total
+  doc.setTextColor(...hex('#7a5815')); doc.setFontSize(7); doc.setFont('helvetica','normal');
+  doc.text('TOTAL AMOUNT', M+6, ty);
+  doc.setTextColor(...hex('#e8c87a')); doc.setFontSize(16); doc.setFont('helvetica','bold');
+  doc.text(`R ${total.toLocaleString('en-ZA')}`, W-M-4, ty+6, {align:'right'});
+  doc.setTextColor(...hex('#7a5815')); doc.setFontSize(6.5); doc.setFont('helvetica','normal');
+  doc.text('VAT not registered — no VAT charged', M+6, ty+6);
+
+  y += totalsH + 8;
+
+  // ── DEPOSIT & PAYMENT TERMS ──
+  const hasDeposit = q.deposit && q.deposit.trim();
+  const hasTerms   = q.terms   && q.terms.trim();
+  if (hasDeposit || hasTerms) {
+    doc.setFillColor(...hex('#111108')); doc.rect(M,y,W-M*2,8,'F');
+    doc.setDrawColor(...hex('#3A6B4F')); doc.rect(M,y,3,8,'F');
+    doc.setTextColor(255,255,255); doc.setFontSize(7.5); doc.setFont('helvetica','bold');
+    doc.text('PAYMENT TERMS', M+6, y+5.5);
+    y += 10;
+
+    doc.setFillColor(255,255,255); doc.rect(M,y,W-M*2,2,'F'); // placeholder, expand below
+    let termsContent = [];
+    if (hasDeposit) termsContent.push(`Deposit: ${q.deposit.trim()}`);
+    if (hasTerms)   termsContent.push(q.terms.trim());
+    const allTerms = doc.splitTextToSize(termsContent.join('\n'), W-M*2-8);
+    const termsH = allTerms.length * 5 + 6;
+    doc.setFillColor(255,255,255); doc.rect(M,y,W-M*2,termsH,'F');
+    doc.setDrawColor(220,220,215); doc.rect(M,y,W-M*2,termsH,'S');
+    doc.setTextColor(40,40,40); doc.setFontSize(8.5); doc.setFont('helvetica','normal');
+    doc.text(allTerms, M+4, y+5);
+    y += termsH + 6;
+  } else if (!isInvoice) {
+    // Fallback generic terms if none entered
+    doc.setTextColor(...hex('#7a6d58')); doc.setFontSize(7.5); doc.setFont('helvetica','italic');
+    doc.text('This quotation is valid for 30 days. A deposit is required to confirm the booking.', M, y);
+    doc.text('Parts are sourced at cost — final invoice may vary slightly if parts prices change.', M, y+6);
+    y += 14;
+  }
+
+  // ── EFT BANKING DETAILS ──
+  y += 2;
+  doc.setFillColor(...hex('#111108')); doc.rect(M,y,W-M*2,8,'F');
+  doc.setDrawColor(...hex('#3A6B4F')); doc.rect(M,y,3,8,'F');
+  doc.setTextColor(255,255,255); doc.setFontSize(7.5); doc.setFont('helvetica','bold');
+  doc.text('EFT BANKING DETAILS', M+6, y+5.5);
+  y += 10;
+
+  const bankH = 28;
+  doc.setFillColor(...hex('#0d1a12')); doc.roundedRect(M,y,W-M*2,bankH,3,3,'F');
+  doc.setDrawColor(...hex('#2d6b45')); doc.roundedRect(M,y,W-M*2,bankH,3,3,'S');
+
+  const colA = M+6;
+  const colB = M+60;
+  const rowH = 6.5;
+  let by = y + 7;
+
+  const bankRows = [
+    ['Account Holder', 'Monique Deetlefs'],
+    ['Bank',           'ABSA'],
+    ['Account Number', '9347485805'],
+    ['Branch Code',    '632005'],
+  ];
+
+  bankRows.forEach(([label, value]) => {
+    doc.setTextColor(...hex('#7a5815')); doc.setFontSize(6.5); doc.setFont('helvetica','normal');
+    doc.text(label, colA, by);
+    doc.setTextColor(...hex('#e8c87a')); doc.setFontSize(8.5); doc.setFont('helvetica','bold');
+    doc.text(value, colB, by);
+    by += rowH;
+  });
+
+  doc.setTextColor(...hex('#4caf7a')); doc.setFontSize(6.5); doc.setFont('helvetica','italic');
+  doc.text(`Please use "${client.name} – ${ref}" as payment reference.`, colA, by);
+
+  y += bankH + 6;
+
+  // ── FOOTER ──
   const pages = doc.internal.getNumberOfPages();
   for (let p=1;p<=pages;p++) {
     doc.setPage(p);
@@ -3789,7 +4091,7 @@ async function acceptEnquiry(eq) {
     job_type: eq.job_type || '',
     source: 'Website booking form',
     stage: 'enquiry',
-    quote: { callout: 50, labour: [], parts: [] },
+    quote: { callout: 50, labour: [], parts: [], discountType: '', discountValue: '', deposit: '', terms: '', scope: '' },
     notes: [{
       date: Date.now(),
       text: `Website enquiry received. Job: ${eq.job_type || 'not specified'}. Area: ${eq.area || 'not specified'}.`,
