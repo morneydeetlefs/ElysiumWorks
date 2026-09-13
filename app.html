@@ -3822,7 +3822,11 @@ function renderClientNotesPhotos(client) {
     <div class="ornament-divider"></div>
     <div class="section-eyebrow">Job Photos</div>
     <div class="photo-grid" id="crmPhotoGrid">
-      ${(client.photos||[]).map(p => `<img class="photo-thumb" src="${p}" onclick="viewPhoto(this.src)"/>`).join('')}
+      ${(client.photos||[]).map((p,i) => `
+        <div style="position:relative">
+          <img class="photo-thumb" src="${p}" onclick="viewPhoto(this.src)"/>
+          <button onclick="deleteClientPhoto(${i})" style="position:absolute;top:2px;right:2px;background:rgba(201,76,76,.9);border:none;border-radius:3px;color:#fff;font-size:.65rem;padding:.15rem .35rem;cursor:pointer;line-height:1">✕</button>
+        </div>`).join('')}
       <div class="photo-placeholder" onclick="triggerCRMPhoto()">📷</div>
     </div>
     <div class="ornament-divider"></div>
@@ -3952,6 +3956,7 @@ function renderJobDetail(job) {
       <div style="position:relative">
         <img class="photo-thumb" src="${p.annotated||p.original}" onclick="viewPhoto(this.src)" title="${p.label||''}"/>
         <button onclick="editAnnotation(${i})" style="position:absolute;bottom:2px;right:2px;background:rgba(10,9,6,.8);border:1px solid var(--md-gold-dk);border-radius:3px;color:var(--md-gold);font-size:.6rem;padding:.1rem .3rem;cursor:pointer">✏️</button>
+        <button onclick="deleteJobPhoto(${i})" style="position:absolute;top:2px;right:2px;background:rgba(201,76,76,.9);border:none;border-radius:3px;color:#fff;font-size:.65rem;padding:.15rem .35rem;cursor:pointer;line-height:1">✕</button>
       </div>`).join('')}
     <div class="photo-placeholder" onclick="triggerJobPhoto()">📷</div>
   </div>
@@ -5558,6 +5563,25 @@ async function generateQuotePDF(isInvoice) {
     await setClientStage('quoted');
   }}
 
+// ── DELETE PHOTOS ──
+async function deleteClientPhoto(idx) {
+  if (!currentClient?.photos) return;
+  currentClient.photos.splice(idx, 1);
+  currentClient.updated_at = Date.now();
+  await dbPutClient(currentClient);
+  showToast('Photo removed', 'info');
+  renderClientNotesPhotos(currentClient);
+}
+
+async function deleteJobPhoto(idx) {
+  if (!currentJob?.annotatedPhotos) return;
+  currentJob.annotatedPhotos.splice(idx, 1);
+  currentJob.updated_at = Date.now();
+  await dbPutJob(currentJob);
+  showToast('Photo removed', 'info');
+  renderJobDetail(currentJob);
+}
+
 // ── CRM PHOTOS ──
 function triggerCRMPhoto() {
   crmPhotoTarget = true;
@@ -5612,8 +5636,11 @@ document.getElementById('photo-capture').addEventListener('change', async functi
   // Refresh photo grid
   const grid = document.getElementById('crmPhotoGrid');
   if (grid) {
-    grid.innerHTML = currentClient.photos.map(p =>
-      `<img class="photo-thumb" src="${p}" onclick="viewPhoto(this.src)"/>`).join('')
+    grid.innerHTML = currentClient.photos.map((p,i) =>
+      `<div style="position:relative">
+        <img class="photo-thumb" src="${p}" onclick="viewPhoto(this.src)"/>
+        <button onclick="deleteClientPhoto(${i})" style="position:absolute;top:2px;right:2px;background:rgba(201,76,76,.9);border:none;border-radius:3px;color:#fff;font-size:.65rem;padding:.15rem .35rem;cursor:pointer;line-height:1">✕</button>
+      </div>`).join('')
       + `<div class="photo-placeholder" onclick="triggerCRMPhoto()">📷</div>`;
   }
   showToast(`${files.length} photo${files.length>1?'s':''} added`, 'success');
@@ -5624,7 +5651,92 @@ document.getElementById('photo-capture').addEventListener('change', async functi
 // ── BOOT ──
 async function boot() {
   DB = await openDB();
+  await migrateOldQuotesToJobs();  // v4 migration — safe to run every boot
   await initAuth();
+}
+
+// ── V4 MIGRATION ──────────────────────────────────────────────
+// Converts old client.quote blobs into proper jobs store records.
+// Runs every boot but only acts when jobs store is empty and
+// clients have quote data — safe to run repeatedly.
+async function migrateOldQuotesToJobs() {
+  try {
+    const existingJobs = await dbGetAllJobs();
+    if (existingJobs.length > 0) return; // already migrated
+
+    const clients = await dbGetAllClients();
+    if (!clients.length) return;
+
+    let migrated = 0;
+    for (const client of clients) {
+      const q = client.quote;
+      // Skip if no meaningful quote data
+      const hasScope   = q?.scope?.trim();
+      const hasLabour  = (q?.labour||[]).some(l => l.desc || l.amount);
+      const hasParts   = (q?.parts||[]).some(l => l.desc || l.amount);
+      const hasCallout = parseFloat(q?.callout) > 0;
+
+      if (!hasScope && !hasLabour && !hasParts) continue;
+
+      // Determine job type from stage / job_type field
+      const typeMap = {
+        'Appliance repair': 'appliance',
+        'Appliance Repair': 'appliance',
+        'Home inspection': 'inspection',
+        'Home Inspection': 'inspection',
+        'Fencing': 'quote',
+        'Patio': 'patio',
+      };
+      const type = typeMap[client.job_type] || 'quote';
+      const typeCode = type === 'inspection' ? 'I' : type === 'appliance' ? 'A' : 'Q';
+      const ref = await nextJobNumber(typeCode);
+
+      // Convert old labour/parts lines to new line items format
+      const labourLines = (q?.labour||[])
+        .filter(l => l.desc || l.amount)
+        .map(l => ({ description: l.desc || 'Labour', qty: 1, unit: 'hrs', unit_price: parseFloat(l.amount)||0 }));
+      const partsLines = (q?.parts||[])
+        .filter(l => l.desc || l.amount)
+        .map(l => ({ description: l.desc || 'Part/Material', qty: 1, unit: 'each', unit_price: parseFloat(l.amount)||0 }));
+
+      const job = {
+        id: uid(),
+        client_id: client.id,
+        client_name: client.name,
+        type,
+        ref,
+        description: hasScope ? q.scope.trim().slice(0, 80) : (client.job_type || 'Job'),
+        address: client.area || '',
+        visit_date: client.created_at || Date.now(),
+        status: client.stage || 'enquiry',
+        quote: {
+          callout: parseFloat(q?.callout) || 50,
+          lines: [...labourLines, ...partsLines],
+          discountType: q?.discountType || '',
+          discountValue: q?.discountValue || '',
+          deposit: q?.deposit || '',
+          terms: q?.terms || '',
+          scope: q?.scope || '',
+          validUntil: q?.validUntil || '',
+        },
+        sketch: null,
+        annotatedPhotos: [],
+        measurements: [],
+        notes: (client.notes || []),  // carry notes across
+        created_at: client.created_at || Date.now(),
+        updated_at: Date.now(),
+      };
+
+      await dbPutJob(job);
+      migrated++;
+    }
+
+    if (migrated > 0) {
+      console.log(`[EW] Migrated ${migrated} client quote(s) to jobs store`);
+    }
+  } catch (e) {
+    console.warn('[EW] Migration error:', e);
+  }
 }
 
 // ── CHECK FOR NEW ENQUIRIES (owner side) ─────────────────────────────────────
