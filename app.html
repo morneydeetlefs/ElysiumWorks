@@ -2333,7 +2333,8 @@ async function fullSync() {
         const updated = await dbGetClient(currentClient.id);
         if (updated && updated.updated_at > currentClient.updated_at) {
           currentClient = updated;
-          renderClientDetail(updated);
+          if (currentDetailTab === 'current') await renderCurrentJob(updated);
+          else if (currentDetailTab === 'notes') renderClientNotesPhotos(updated);
           renderStageStepper(updated.stage);
         }
       }
@@ -3612,7 +3613,7 @@ async function openClientDetail(clientId) {
   renderStageStepper(client.stage);
   currentDetailTab = 'current';
   updateDetailTabUI();
-  renderClientDetail(client);
+  await renderCurrentJob(client);
   showScreen('client-detail');
 }
 
@@ -3627,12 +3628,140 @@ async function switchDetailTab(tab) {
   currentDetailTab = tab;
   updateDetailTabUI();
   if (tab === 'current') {
-    renderClientDetail(currentClient);
+    await renderCurrentJob(currentClient);
   } else if (tab === 'jobs') {
     await renderJobHistory(currentClient);
   } else if (tab === 'notes') {
     renderClientNotesPhotos(currentClient);
   }
+}
+
+// ── CURRENT JOB TAB ──
+// Shows the client's most recent job, or a prompt to create one.
+async function renderCurrentJob(client) {
+  const jobs = await dbGetClientJobs(client.id);
+  const el = document.getElementById('clientDetailContent');
+
+  if (!jobs.length) {
+    // No jobs yet — show client info and a big prompt
+    el.innerHTML = `
+      <div class="section-eyebrow" style="margin-bottom:.75rem">Client Info</div>
+      <div style="background:var(--md-surface);border:1px solid var(--md-border);border-radius:var(--md-radius-lg);padding:1rem;margin-bottom:1rem">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
+          <div><div style="font-family:'Syne Mono',monospace;font-size:.58rem;letter-spacing:.15em;color:var(--md-gold-dk);margin-bottom:.3rem">AREA</div>
+            <div style="font-size:.85rem;color:var(--md-cream)">${client.area||'—'}</div></div>
+          <div><div style="font-family:'Syne Mono',monospace;font-size:.58rem;letter-spacing:.15em;color:var(--md-gold-dk);margin-bottom:.3rem">SOURCE</div>
+            <div style="font-size:.85rem;color:var(--md-cream)">${client.source||'—'}</div></div>
+          <div><div style="font-family:'Syne Mono',monospace;font-size:.58rem;letter-spacing:.15em;color:var(--md-gold-dk);margin-bottom:.3rem">JOB TYPE</div>
+            <div style="font-size:.85rem;color:var(--md-cream)">${client.job_type||'—'}</div></div>
+          <div><div style="font-family:'Syne Mono',monospace;font-size:.58rem;letter-spacing:.15em;color:var(--md-gold-dk);margin-bottom:.3rem">ADDED</div>
+            <div style="font-size:.85rem;color:var(--md-cream)">${new Date(client.created_at).toLocaleDateString('en-ZA')}</div></div>
+        </div>
+      </div>
+      <div class="ornament-divider"></div>
+      <div class="empty-state" style="padding:2rem 1rem">
+        <div class="empty-icon">📋</div>
+        <div class="empty-text" style="margin-bottom:1.25rem">No jobs yet for ${client.name}</div>
+        <button class="btn-primary" onclick="openNewJobModal()">+ Create First Job</button>
+      </div>
+    `;
+    return;
+  }
+
+  // Has jobs — show most recent job inline
+  const latest = jobs[0];
+  currentJob = latest;
+
+  el.innerHTML = `
+    <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.75rem">
+      <div style="flex:1">
+        <div style="font-family:'Syne Mono',monospace;font-size:.58rem;letter-spacing:.2em;color:var(--md-gold-dk)">MOST RECENT JOB</div>
+        <div style="font-family:'Syne',sans-serif;font-size:.9rem;font-weight:600;color:var(--md-cream);margin-top:.2rem">${latest.description||'—'}</div>
+        <div style="font-family:'Syne Mono',monospace;font-size:.6rem;color:var(--md-gold-dk);margin-top:.15rem">${latest.ref||''}</div>
+      </div>
+      <button onclick="openJobDetail('${latest.id}')" style="background:var(--md-surface);border:1px solid var(--md-border-lt);border-radius:var(--md-radius);color:var(--md-gold);font-family:'Syne Mono',monospace;font-size:.62rem;letter-spacing:.1em;padding:.5rem .75rem;cursor:pointer;white-space:nowrap">Open Job ›</button>
+    </div>
+
+    <!-- STATUS ROW -->
+    <div style="display:flex;gap:.4rem;margin-bottom:.75rem;overflow-x:auto;padding-bottom:.25rem">
+      ${STAGES.map(s => `<button onclick="setJobStatusFromCurrent('${s.id}')" style="flex-shrink:0;padding:.35rem .65rem;border-radius:20px;font-family:'Syne Mono',monospace;font-size:.55rem;letter-spacing:.1em;border:1px solid ${latest.status===s.id?'var(--md-gold)':'var(--md-border-lt)'};background:${latest.status===s.id?'var(--md-gold-dk)':'var(--md-surface)'};color:${latest.status===s.id?'var(--md-gold-lt)':'var(--md-muted)'};cursor:pointer;white-space:nowrap">${s.icon} ${s.label}</button>`).join('')}
+    </div>
+
+    <div class="ornament-divider"></div>
+
+    <!-- QUOTE SUMMARY -->
+    <div class="section-eyebrow">Quote Summary</div>
+    ${renderJobQuoteSummary(latest)}
+
+    <div style="display:flex;gap:.6rem;margin:.75rem 0">
+      <button class="btn-primary" style="flex:1" onclick="openJobDetail('${latest.id}')">✏️ Edit Full Quote</button>
+    </div>
+    <div style="display:flex;gap:.6rem;margin-bottom:.75rem">
+      <button class="btn-primary" style="flex:1" onclick="currentJob=jobs_cache['${latest.id}'];generateJobPDF(false)">📄 Quote PDF</button>
+      <button class="btn-primary" style="flex:1;background:linear-gradient(135deg,#2d6b45,#4caf7a)" onclick="currentJob=jobs_cache['${latest.id}'];generateJobPDF(true)">📄 Invoice</button>
+    </div>
+    <button class="btn-whatsapp" onclick="currentJob=jobs_cache['${latest.id}'];sendJobWhatsApp()">💬 WhatsApp Summary</button>
+
+    <div class="ornament-divider"></div>
+
+    ${jobs.length > 1 ? `
+    <div class="section-eyebrow">Other Jobs (${jobs.length - 1})</div>
+    ${jobs.slice(1, 4).map(j => jobCardHTML(j)).join('')}
+    ${jobs.length > 4 ? `<button class="btn-secondary" style="margin-top:.5rem" onclick="switchDetailTab('jobs')">View all ${jobs.length} jobs →</button>` : ''}
+    <div class="ornament-divider"></div>
+    ` : ''}
+
+    <button class="btn-primary" onclick="openNewJobModal()" style="margin-bottom:.5rem">+ New Job for ${client.name}</button>
+    <div style="display:flex;gap:.6rem;margin-top:.5rem">
+      <button class="btn-secondary" style="flex:1" onclick="switchDetailTab('notes')">📝 Notes & Photos</button>
+      <button class="btn-danger" style="flex:0 0 auto;width:auto;padding:.8rem 1rem" onclick="confirmDeleteClient('${client.id}')">🗑️</button>
+    </div>
+    <div style="height:2rem"></div>
+  `;
+
+  // Cache jobs for onclick access
+  window.jobs_cache = window.jobs_cache || {};
+  jobs.forEach(j => window.jobs_cache[j.id] = j);
+}
+
+function renderJobQuoteSummary(job) {
+  const q = job.quote || {};
+  const callout = parseFloat(q.callout) || 0;
+  const lines   = (q.lines||[]).filter(l => l.description);
+  const linesTotal = lines.reduce((s,l) => s+(parseFloat(l.qty)||1)*(parseFloat(l.unit_price)||0), 0);
+  const subtotal = callout + linesTotal;
+  const discAmt  = calcDiscount(q, subtotal);
+  const total    = subtotal - discAmt;
+
+  if (!lines.length && !q.scope) {
+    return `<div style="color:var(--md-muted);font-size:.82rem;padding:.5rem 0">No quote details yet — tap Edit Full Quote to build the quote.</div>`;
+  }
+
+  let html = '';
+  if (q.scope) {
+    html += `<div style="font-style:italic;font-size:.82rem;color:var(--md-muted);margin-bottom:.75rem;padding:.6rem .75rem;background:var(--md-surface);border-radius:var(--md-radius);border-left:3px solid var(--md-gold-dk)">${q.scope}</div>`;
+  }
+  if (lines.length) {
+    html += lines.map(l => `
+      <div style="display:flex;justify-content:space-between;align-items:baseline;padding:.35rem 0;border-bottom:1px solid var(--md-border);font-size:.82rem">
+        <span style="color:var(--md-cream);flex:1">${l.description} <span style="color:var(--md-muted);font-size:.72rem">${l.qty||1} ${l.unit||'each'}</span></span>
+        <span style="font-family:'Syne Mono',monospace;color:var(--md-gold-lt);flex-shrink:0;margin-left:.5rem">R ${((parseFloat(l.qty)||1)*(parseFloat(l.unit_price)||0)).toLocaleString('en-ZA')}</span>
+      </div>`).join('');
+  }
+  html += `<div style="display:flex;justify-content:space-between;margin-top:.75rem;padding:.6rem .75rem;background:var(--md-surface);border:1px solid var(--md-gold-dk);border-radius:var(--md-radius)">
+    <span style="font-family:'Syne Mono',monospace;font-size:.72rem;letter-spacing:.1em;color:var(--md-gold-dk)">TOTAL</span>
+    <span style="font-family:'Syne Mono',monospace;font-size:1rem;color:var(--md-gold-lt)">R ${total.toLocaleString('en-ZA')}</span>
+  </div>`;
+  return html;
+}
+
+async function setJobStatusFromCurrent(stageId) {
+  if (!currentJob) return;
+  currentJob.status = stageId;
+  currentJob.updated_at = Date.now();
+  await dbPutJob(currentJob);
+  showToast(`Status: ${STAGES.find(s=>s.id===stageId)?.label}`, 'success');
+  await renderCurrentJob(currentClient); // re-render current tab
 }
 
 // ── JOB HISTORY TAB ──
@@ -4114,7 +4243,7 @@ async function saveNote() {
     document.getElementById('note-text').value = '';
     showToast('Note saved', 'success');
     if (currentDetailTab === 'notes') renderClientNotesPhotos(currentClient);
-    else renderClientDetail(currentClient);
+    else await renderCurrentJob(currentClient);
   }
 }
 
