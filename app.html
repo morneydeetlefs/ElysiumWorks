@@ -849,6 +849,97 @@ body::before {
   padding: 0 .75rem;
 }
 
+/* ══ SKETCH TOOL BUTTONS ══ */
+.sketch-tool-btn {
+  padding: .4rem .75rem;
+  border-radius: 20px;
+  font-family: 'Syne Mono', monospace;
+  font-size: .62rem; letter-spacing: .08em;
+  border: 1px solid var(--md-border-lt);
+  background: var(--md-surface);
+  color: var(--md-muted);
+  cursor: pointer; white-space: nowrap;
+  flex-shrink: 0;
+  transition: all .15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.sketch-tool-btn.active {
+  background: var(--md-gold-dk);
+  border-color: var(--md-gold);
+  color: var(--md-gold-lt);
+}
+
+/* ══ JOBS TAB UI ══ */
+.detail-tabs {
+  display: flex;
+  background: var(--md-black);
+  border-bottom: 1px solid var(--md-border);
+  flex-shrink: 0;
+}
+.detail-tab {
+  flex: 1;
+  padding: .7rem .5rem;
+  font-family: 'Syne Mono', monospace;
+  font-size: .58rem; letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--md-muted);
+  background: none; border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: color .2s, border-color .2s;
+  -webkit-tap-highlight-color: transparent;
+}
+.detail-tab.active {
+  color: var(--md-gold-lt);
+  border-bottom-color: var(--md-gold);
+}
+
+/* ══ JOB CARD ══ */
+.job-card {
+  background: var(--md-surface);
+  border: 1px solid var(--md-border);
+  border-radius: var(--md-radius-lg);
+  padding: 1rem 1.1rem;
+  margin-bottom: .6rem;
+  cursor: pointer;
+  transition: border-color .18s;
+  -webkit-tap-highlight-color: transparent;
+  position: relative;
+}
+.job-card:active { border-color: var(--md-gold-dk); }
+.job-ref {
+  font-family: 'Syne Mono', monospace;
+  font-size: .6rem; letter-spacing: .18em;
+  color: var(--md-gold-dk);
+  margin-bottom: .25rem;
+}
+.job-desc {
+  font-family: 'Syne', sans-serif;
+  font-size: .88rem; font-weight: 600;
+  color: var(--md-cream);
+}
+.job-address {
+  font-size: .75rem; color: var(--md-muted);
+  margin-top: .15rem;
+}
+.job-meta {
+  display: flex; align-items: center; gap: .6rem;
+  margin-top: .5rem; flex-wrap: wrap;
+}
+
+/* ══ MEASUREMENT ANNOTATION ══ */
+.ann-measurement-label {
+  position: absolute;
+  background: rgba(10,9,6,.8);
+  border: 1px solid var(--md-gold-dk);
+  border-radius: 4px;
+  padding: .15rem .4rem;
+  font-family: 'Syne Mono', monospace;
+  font-size: .65rem; color: var(--md-gold-lt);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
 /* ══ SYNC INDICATOR ══ */
 .sync-dot {
   width: 10px; height: 10px;
@@ -1555,6 +1646,13 @@ body::before {
     <!-- Stage stepper -->
     <div class="stage-stepper" id="stageStepper"></div>
 
+    <!-- Detail tabs -->
+    <div class="detail-tabs">
+      <button class="detail-tab active" id="dtab-current" onclick="switchDetailTab('current')">Current Job</button>
+      <button class="detail-tab" id="dtab-jobs" onclick="switchDetailTab('jobs')">Job History</button>
+      <button class="detail-tab" id="dtab-notes" onclick="switchDetailTab('notes')">Notes & Photos</button>
+    </div>
+
     <div class="scroll-content" id="clientDetailContent"></div>
   </div>
 
@@ -1651,6 +1749,129 @@ body::before {
       <div class="btn-row">
         <button class="btn-secondary" onclick="closeModal('addNoteModal')">Cancel</button>
         <button class="btn-primary" onclick="saveNote()">Save Note</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ════ JOBS SCREEN (client job history & new job) ════ -->
+  <div class="screen" id="screen-job-detail">
+    <div class="topbar">
+      <button class="back-btn" onclick="showScreen('client-detail')">‹</button>
+      <div style="flex:1">
+        <div class="topbar-brand" id="jd-title">Job</div>
+        <div class="topbar-sub" id="jd-ref">Reference</div>
+      </div>
+      <div class="sync-dot sync-dot-all" title="Tap to sync now" onclick="manualSync()"></div>
+    </div>
+    <div class="scroll-content" id="jobDetailContent"></div>
+  </div>
+
+  <!-- ════ SKETCH SCREEN ════ -->
+  <div class="screen" id="screen-sketch">
+    <div class="topbar">
+      <button class="back-btn" id="sketchBackBtn">‹</button>
+      <div style="flex:1">
+        <div class="topbar-brand">Site Sketch</div>
+        <div class="topbar-sub">Draw plan & add notes</div>
+      </div>
+      <button onclick="clearSketch()" style="background:none;border:none;color:var(--md-muted);font-family:'Syne Mono',monospace;font-size:.65rem;letter-spacing:.1em;cursor:pointer;padding:.4rem">CLEAR</button>
+      <button onclick="saveSketch()" style="background:linear-gradient(135deg,var(--md-gold-dk),var(--md-gold));color:var(--md-black);border:none;border-radius:var(--md-radius);font-family:'Cinzel',serif;font-size:.7rem;font-weight:600;letter-spacing:.1em;padding:.5rem .85rem;cursor:pointer">Save</button>
+    </div>
+    <!-- Tool bar -->
+    <div style="display:flex;gap:.4rem;padding:.6rem .75rem;background:var(--md-black);border-bottom:1px solid var(--md-border);flex-shrink:0;overflow-x:auto">
+      <button class="sketch-tool-btn active" id="stool-pen"    onclick="setSketchTool('pen')">✏️ Pen</button>
+      <button class="sketch-tool-btn"        id="stool-line"   onclick="setSketchTool('line')">╱ Line</button>
+      <button class="sketch-tool-btn"        id="stool-rect"   onclick="setSketchTool('rect')">▭ Rect</button>
+      <button class="sketch-tool-btn"        id="stool-text"   onclick="setSketchTool('text')">T Text</button>
+      <button class="sketch-tool-btn"        id="stool-erase"  onclick="setSketchTool('erase')">⌫ Erase</button>
+      <div style="width:1px;background:var(--md-border);flex-shrink:0;margin:0 .2rem"></div>
+      <select id="sketch-color" onchange="sketchColor=this.value" style="background:var(--md-surface);border:1px solid var(--md-border);border-radius:4px;color:var(--md-cream);font-size:.72rem;padding:.3rem .5rem">
+        <option value="#e8c87a">Gold</option>
+        <option value="#f0e6ce">Cream</option>
+        <option value="#c94c4c">Red</option>
+        <option value="#4caf7a">Green</option>
+        <option value="#4c8fc9">Blue</option>
+        <option value="#c9943c">Amber</option>
+      </select>
+      <select id="sketch-size" onchange="sketchSize=parseInt(this.value)" style="background:var(--md-surface);border:1px solid var(--md-border);border-radius:4px;color:var(--md-cream);font-size:.72rem;padding:.3rem .5rem">
+        <option value="2">Thin</option>
+        <option value="4" selected>Medium</option>
+        <option value="8">Thick</option>
+      </select>
+    </div>
+    <canvas id="sketchCanvas" style="flex:1;width:100%;touch-action:none;background:#1a1610;cursor:crosshair;display:block"></canvas>
+    <div id="textInputBar" style="display:none;padding:.5rem .75rem;background:var(--md-black);border-top:1px solid var(--md-border);flex-shrink:0;gap:.5rem;align-items:center">
+      <input id="sketchTextInput" type="text" placeholder="Type label then tap canvas..." class="form-input" style="flex:1;padding:.5rem .75rem;font-size:.85rem"/>
+    </div>
+  </div>
+
+  <!-- ════ ANNOTATE PHOTO SCREEN ════ -->
+  <div class="screen" id="screen-annotate">
+    <div class="topbar">
+      <button class="back-btn" id="annotateBackBtn">‹</button>
+      <div style="flex:1">
+        <div class="topbar-brand">Annotate Photo</div>
+        <div class="topbar-sub">Draw measurements & notes</div>
+      </div>
+      <button onclick="clearAnnotation()" style="background:none;border:none;color:var(--md-muted);font-family:'Syne Mono',monospace;font-size:.65rem;letter-spacing:.1em;cursor:pointer;padding:.4rem">CLEAR</button>
+      <button onclick="saveAnnotation()" style="background:linear-gradient(135deg,var(--md-gold-dk),var(--md-gold));color:var(--md-black);border:none;border-radius:var(--md-radius);font-family:'Cinzel',serif;font-size:.7rem;font-weight:600;letter-spacing:.1em;padding:.5rem .85rem;cursor:pointer">Save</button>
+    </div>
+    <div style="display:flex;gap:.4rem;padding:.6rem .75rem;background:var(--md-black);border-bottom:1px solid var(--md-border);flex-shrink:0;overflow-x:auto">
+      <button class="sketch-tool-btn active" id="atool-line" onclick="setAnnotateTool('line')">╱ Measure</button>
+      <button class="sketch-tool-btn" id="atool-arrow" onclick="setAnnotateTool('arrow')">→ Arrow</button>
+      <button class="sketch-tool-btn" id="atool-text"  onclick="setAnnotateTool('text')">T Label</button>
+      <button class="sketch-tool-btn" id="atool-rect"  onclick="setAnnotateTool('rect')">▭ Box</button>
+      <button class="sketch-tool-btn" id="atool-erase" onclick="setAnnotateTool('erase')">⌫ Erase</button>
+      <div style="width:1px;background:var(--md-border);flex-shrink:0;margin:0 .2rem"></div>
+      <select id="ann-color" onchange="annColor=this.value" style="background:var(--md-surface);border:1px solid var(--md-border);border-radius:4px;color:var(--md-cream);font-size:.72rem;padding:.3rem .5rem">
+        <option value="#e8c87a">Gold</option>
+        <option value="#c94c4c" selected>Red</option>
+        <option value="#4caf7a">Green</option>
+        <option value="#4c8fc9">Blue</option>
+        <option value="#ffffff">White</option>
+      </select>
+    </div>
+    <div style="flex:1;position:relative;overflow:hidden;background:#111">
+      <canvas id="annotateCanvas" style="position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:crosshair"></canvas>
+    </div>
+    <div id="annTextBar" style="display:none;padding:.5rem .75rem;background:var(--md-black);border-top:1px solid var(--md-border);flex-shrink:0;gap:.5rem;display:none">
+      <input id="annTextInput" type="text" placeholder="e.g. 4.2m span" class="form-input" style="padding:.5rem .75rem;font-size:.85rem"/>
+      <button onclick="placeAnnotationText()" class="btn-primary" style="width:auto;padding:.5rem 1rem;font-size:.72rem">Place</button>
+    </div>
+  </div>
+
+  <!-- NEW JOB MODAL -->
+  <div class="modal-overlay" id="newJobModal">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-title">New Job</div>
+      <div class="form-group">
+        <label class="form-label">Job Type</label>
+        <select class="form-input" id="nj-type">
+          <option value="quote">Construction Quote (fencing, roofing, building)</option>
+          <option value="appliance">Appliance Repair</option>
+          <option value="handyman">Handyman / General</option>
+          <option value="inspection">Home Inspection</option>
+          <option value="patio">Patio / Enclosure</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Site / Property Address</label>
+        <input class="form-input" id="nj-address" type="text" placeholder="e.g. 14 Coral Way, Pennington" autocomplete="off"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Brief Description</label>
+        <input class="form-input" id="nj-desc" type="text" placeholder="e.g. Replace braai area roof, 6m span"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Visit Date</label>
+        <input class="form-input" id="nj-date" type="date"/>
+      </div>
+      <div class="btn-row">
+        <button class="btn-secondary" onclick="closeModal('newJobModal')">Cancel</button>
+        <button class="btn-primary" onclick="saveNewJob()" style="flex:2">Create Job</button>
       </div>
     </div>
   </div>
@@ -1845,7 +2066,7 @@ let cloudToken = null;   // JWT from Worker auth
 // ── INDEXEDDB SETUP ──
 function openDB() {
   return new Promise((resolve, reject) => {
-    const req = indexedDB.open('ElysiumWorksDB', 3);
+    const req = indexedDB.open('ElysiumWorksDB', 4);
     req.onupgradeneeded = e => {
       const db = e.target.result;
       if (!db.objectStoreNames.contains('projects')) {
@@ -1856,6 +2077,10 @@ function openDB() {
       }
       if (!db.objectStoreNames.contains('clients_crm')) {
         db.createObjectStore('clients_crm', { keyPath: 'id' });
+      }
+      // v4: standalone jobs store — each job (quote / construction) linked by client_id
+      if (!db.objectStoreNames.contains('jobs')) {
+        db.createObjectStore('jobs', { keyPath: 'id' });
       }
     };
     req.onsuccess = e => resolve(e.target.result);
@@ -2085,10 +2310,11 @@ async function fullSync() {
   updateSyncIndicator('syncing');
   try {
     await cloudAuth();
-    // Run both in parallel for speed
+    // Run all pushes in parallel for speed
     await Promise.all([
       syncToCloud(),   // push inspection projects
       pushClients(),   // push CRM clients
+      pushJobs(),      // push construction jobs  (v4)
     ]);
     const clientsChanged = await pullClients();  // pull remote clients
 
@@ -2115,6 +2341,34 @@ async function fullSync() {
   } catch (e) {
     updateSyncIndicator('offline');
   }
+}
+
+// Push all local jobs to D1
+async function pushJobs() {
+  if (!WORKER_URL || !navigator.onLine) return;
+  try {
+    if (!cloudToken) await cloudAuth();
+    if (!cloudToken) return;
+
+    const jobs = await dbGetAllJobs();
+    if (!jobs.length) return;
+
+    // Strip base64 photos/sketches before sending — keep payload lean
+    const payload = jobs.map(j => ({
+      ...j,
+      sketch: j.sketch ? '[sketch]' : null,
+      annotatedPhotos: (j.annotatedPhotos || []).map(p => ({ label: p.label })),
+    }));
+
+    await fetch(`${WORKER_URL}/api/jobs/sync`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${cloudToken}`,
+      },
+      body: JSON.stringify({ jobs: payload }),
+    });
+  } catch (e) {}
 }
 
 // ── SYNC TRIGGERS ─────────────────────────────────────────────────────────────
@@ -2174,6 +2428,19 @@ async function cloudDeleteClient(clientId) {
     if (!cloudToken) await cloudAuth();
     if (!cloudToken) return;
     await fetch(`${WORKER_URL}/api/clients/${clientId}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${cloudToken}` },
+    });
+  } catch {}
+}
+
+// Delete job from cloud
+async function cloudDeleteJob(jobId) {
+  if (!WORKER_URL || !navigator.onLine) return;
+  try {
+    if (!cloudToken) await cloudAuth();
+    if (!cloudToken) return;
+    await fetch(`${WORKER_URL}/api/jobs/${jobId}`, {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${cloudToken}` },
     });
@@ -3178,6 +3445,27 @@ function dbPutClient(c)    { return dbPut('clients_crm', c); }
 function dbGetClient(id)   { return dbGet('clients_crm', id); }
 function dbDelClient(id)   { return dbDelete('clients_crm', id); }
 
+// ── DB helpers for jobs store ──
+function dbGetAllJobs()        { return dbGetAll('jobs'); }
+function dbPutJob(j)           { return dbPut('jobs', j); }
+function dbGetJob(id)          { return dbGet('jobs', id); }
+function dbDelJob(id)          { return dbDelete('jobs', id); }
+async function dbGetClientJobs(clientId) {
+  const all = await dbGetAllJobs();
+  return all.filter(j => j.client_id === clientId).sort((a,b) => b.created_at - a.created_at);
+}
+
+// ── JOB NUMBER SEQUENCE ──
+async function nextJobNumber(type) {
+  // type: 'Q' for quote, 'I' for inspection
+  const key = `jobseq_${type}`;
+  const rec = await dbGet('settings', key);
+  const next = (rec ? rec.value : 0) + 1;
+  await dbPut('settings', { key, value: next });
+  const year = new Date().getFullYear().toString().slice(-2);
+  return `EW-${type}-${year}-${String(next).padStart(3,'0')}`;
+}
+
 // ── PIPELINE TABS ──
 function renderPipelineTabs(clients) {
   const counts = {};
@@ -3217,13 +3505,19 @@ async function loadCRMClients() {
     return;
   }
 
-  el.innerHTML = sorted.map(c => {
+  // Build cards — add job counts asynchronously
+  const cardEls = sorted.map(c => {
     const stage = STAGES.find(s => s.id === c.stage) || STAGES[0];
     const total = calcClientTotal(c);
     const date = new Date(c.updated_at).toLocaleDateString('en-ZA', {day:'numeric',month:'short'});
     return `<div class="client-card" onclick="openClientDetail('${c.id}')">
-      <div class="client-name">${c.name}</div>
-      <div class="client-job">${c.job_type || '—'}</div>
+      <div style="display:flex;align-items:flex-start;gap:.5rem">
+        <div style="flex:1">
+          <div class="client-name">${c.name}</div>
+          <div class="client-job">${c.job_type || '—'}</div>
+        </div>
+        <span id="jcnt-${c.id}" style="font-family:'Syne Mono',monospace;font-size:.55rem;letter-spacing:.1em;background:var(--md-panel);border:1px solid var(--md-border);border-radius:10px;padding:.15rem .45rem;color:var(--md-muted);flex-shrink:0"></span>
+      </div>
       <div class="client-meta">
         <span class="stage-pill ${stage.cls}">${stage.icon} ${stage.label}</span>
         <span class="client-area">${c.area || ''}</span>
@@ -3231,7 +3525,24 @@ async function loadCRMClients() {
         ${total > 0 ? `<span class="client-value">R ${total.toLocaleString('en-ZA')}</span>` : ''}
       </div>
     </div>`;
-  }).join('');
+  });
+  el.innerHTML = cardEls.join('');
+
+  // Async: load job counts and fill badges
+  sorted.forEach(async c => {
+    const jobs = await dbGetClientJobs(c.id);
+    const badge = document.getElementById('jcnt-' + c.id);
+    if (badge && jobs.length > 0) {
+      badge.textContent = `${jobs.length} job${jobs.length>1?'s':''}`;
+      if (jobs.length > 1) {
+        badge.style.background = 'var(--md-gold-dk)';
+        badge.style.color = 'var(--md-gold-lt)';
+        badge.style.borderColor = 'var(--md-gold)';
+      }
+    } else if (badge) {
+      badge.style.display = 'none';
+    }
+  });
 }
 
 function calcClientTotal(c) {
@@ -3286,6 +3597,8 @@ async function saveNewClient() {
 }
 
 // ── CLIENT DETAIL ──
+let currentDetailTab = 'current';
+
 async function openClientDetail(clientId) {
   const client = await dbGetClient(clientId);
   if (!client) return;
@@ -3297,8 +3610,1200 @@ async function openClientDetail(clientId) {
   document.getElementById('det-phone').textContent = client.phone || 'No phone';
 
   renderStageStepper(client.stage);
+  currentDetailTab = 'current';
+  updateDetailTabUI();
   renderClientDetail(client);
   showScreen('client-detail');
+}
+
+function updateDetailTabUI() {
+  ['current','jobs','notes'].forEach(t => {
+    const el = document.getElementById('dtab-' + t);
+    if (el) el.classList.toggle('active', t === currentDetailTab);
+  });
+}
+
+async function switchDetailTab(tab) {
+  currentDetailTab = tab;
+  updateDetailTabUI();
+  if (tab === 'current') {
+    renderClientDetail(currentClient);
+  } else if (tab === 'jobs') {
+    await renderJobHistory(currentClient);
+  } else if (tab === 'notes') {
+    renderClientNotesPhotos(currentClient);
+  }
+}
+
+// ── JOB HISTORY TAB ──
+async function renderJobHistory(client) {
+  const jobs = await dbGetClientJobs(client.id);
+  let html = `
+    <div class="section-eyebrow" style="margin-bottom:.75rem">All Jobs — ${client.name}</div>
+    <button class="btn-primary" style="margin-bottom:1rem" onclick="openNewJobModal()">+ New Job for this Client</button>
+  `;
+
+  if (!jobs.length) {
+    html += `<div class="empty-state"><div class="empty-icon">📋</div>
+      <div class="empty-text">No jobs yet — tap New Job to create one</div></div>`;
+  } else {
+    html += jobs.map(j => jobCardHTML(j)).join('');
+  }
+  document.getElementById('clientDetailContent').innerHTML = html;
+}
+
+function jobCardHTML(j) {
+  const date = j.visit_date ? new Date(j.visit_date).toLocaleDateString('en-ZA', {day:'numeric',month:'short',year:'numeric'}) : '—';
+  const total = calcJobTotal(j);
+  const stage = STAGES.find(s => s.id === j.status) || { icon: '📋', label: j.status || 'Draft', cls: 'sp-quoted' };
+  const typeLabel = { quote:'Construction Quote', appliance:'Appliance Repair', handyman:'Handyman', inspection:'Inspection', patio:'Patio / Enclosure', other:'Other' }[j.type] || j.type;
+  return `<div class="job-card" onclick="openJobDetail('${j.id}')">
+    <div class="job-ref">${j.ref || ''} · ${typeLabel}</div>
+    <div class="job-desc">${j.description || '—'}</div>
+    <div class="job-address">${j.address || ''}</div>
+    <div class="job-meta">
+      <span class="stage-pill ${stage.cls}">${stage.icon} ${stage.label}</span>
+      <span class="project-date">${date}</span>
+      ${total > 0 ? `<span class="client-value">R ${total.toLocaleString('en-ZA')}</span>` : ''}
+    </div>
+  </div>`;
+}
+
+function calcJobTotal(j) {
+  const q = j.quote || {};
+  const callout = parseFloat(q.callout) || 0;
+  const lines   = (q.lines || []).reduce((s,l) => s + (parseFloat(l.qty)||1) * (parseFloat(l.unit_price)||0), 0);
+  const subtotal = callout + lines;
+  const disc = calcDiscount(q, subtotal);
+  return subtotal - disc;
+}
+
+// ── NOTES & PHOTOS TAB ──
+function renderClientNotesPhotos(client) {
+  let html = `
+    <div class="section-eyebrow">Job Notes & History</div>
+    <button class="btn-secondary" style="margin-bottom:.75rem" onclick="openModal('addNoteModal')">+ Add note</button>
+    <div id="notesList">
+      ${(client.notes||[]).slice().reverse().map(n => `
+        <div class="history-entry">
+          <div class="history-date">${new Date(n.date).toLocaleString('en-ZA',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</div>
+          <div class="history-text">${n.text}</div>
+        </div>`).join('') || '<div style="color:var(--md-muted);font-size:.82rem;padding:.5rem 0">No notes yet</div>'}
+    </div>
+    <div class="ornament-divider"></div>
+    <div class="section-eyebrow">Job Photos</div>
+    <div class="photo-grid" id="crmPhotoGrid">
+      ${(client.photos||[]).map(p => `<img class="photo-thumb" src="${p}" onclick="viewPhoto(this.src)"/>`).join('')}
+      <div class="photo-placeholder" onclick="triggerCRMPhoto()">📷</div>
+    </div>
+    <div class="ornament-divider"></div>
+    <div class="section-eyebrow">Danger Zone</div>
+    <button class="btn-danger" onclick="confirmDeleteClient('${client.id}')">Delete client</button>
+    <div style="height:2rem"></div>
+  `;
+  document.getElementById('clientDetailContent').innerHTML = html;
+}
+
+// ── NEW JOB ──
+function openNewJobModal() {
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('nj-date').value = today;
+  document.getElementById('nj-address').value = currentClient?.area || '';
+  document.getElementById('nj-desc').value = '';
+  openModal('newJobModal');
+  setTimeout(() => document.getElementById('nj-desc').focus(), 350);
+}
+
+async function saveNewJob() {
+  if (!currentClient) return;
+  const type    = document.getElementById('nj-type').value;
+  const address = document.getElementById('nj-address').value.trim();
+  const desc    = document.getElementById('nj-desc').value.trim();
+  const date    = document.getElementById('nj-date').value;
+  if (!desc) { showToast('Please add a description', 'error'); return; }
+
+  // Ref number — Q for quotes/construction, I for inspection, A for appliance, H for handyman
+  const typeCode = { quote:'Q', inspection:'I', appliance:'A', handyman:'H', patio:'Q', other:'Q' }[type] || 'Q';
+  const ref = await nextJobNumber(typeCode);
+
+  const job = {
+    id: uid(),
+    client_id: currentClient.id,
+    client_name: currentClient.name,
+    type,
+    ref,
+    description: desc,
+    address: address || currentClient.area || '',
+    visit_date: date ? new Date(date).getTime() : Date.now(),
+    status: 'enquiry',
+    quote: {
+      callout: 50,
+      lines: [],   // { id, description, qty, unit, unit_price }
+      discountType: '', discountValue: '',
+      deposit: '', terms: '', scope: '', validUntil: '',
+    },
+    sketch: null,          // base64 PNG from sketch canvas
+    annotatedPhotos: [],   // [{ original, annotated, label }]
+    measurements: [],      // [{ label, value, unit }] — manual dimension log
+    notes: [],
+    created_at: Date.now(),
+    updated_at: Date.now(),
+  };
+
+  await dbPutJob(job);
+  closeModal('newJobModal');
+  showToast(`Job ${ref} created`, 'success');
+  openJobDetail(job.id);
+}
+
+// ── JOB DETAIL ──
+let currentJob = null;
+
+async function openJobDetail(jobId) {
+  const job = await dbGetJob(jobId);
+  if (!job) return;
+  currentJob = job;
+
+  document.getElementById('jd-title').textContent = job.description || 'Job';
+  document.getElementById('jd-ref').textContent = (job.ref || '') + (job.address ? ' · ' + job.address : '');
+
+  renderJobDetail(job);
+  showScreen('job-detail');
+}
+
+function renderJobDetail(job) {
+  const q = job.quote || {};
+  const total = calcJobTotal(job);
+
+  let html = `
+  <!-- JOB INFO -->
+  <div class="section-eyebrow" style="margin-bottom:.75rem">Job Details</div>
+  <div style="background:var(--md-surface);border:1px solid var(--md-border);border-radius:var(--md-radius-lg);padding:1rem;margin-bottom:1rem">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
+      <div><div style="font-family:'Syne Mono',monospace;font-size:.58rem;letter-spacing:.15em;color:var(--md-gold-dk);margin-bottom:.3rem">REF</div>
+        <div style="font-size:.85rem;color:var(--md-gold-lt);font-family:'Syne Mono',monospace">${job.ref || '—'}</div></div>
+      <div><div style="font-family:'Syne Mono',monospace;font-size:.58rem;letter-spacing:.15em;color:var(--md-gold-dk);margin-bottom:.3rem">TYPE</div>
+        <div style="font-size:.85rem;color:var(--md-cream)">${job.type || '—'}</div></div>
+      <div><div style="font-family:'Syne Mono',monospace;font-size:.58rem;letter-spacing:.15em;color:var(--md-gold-dk);margin-bottom:.3rem">ADDRESS</div>
+        <div style="font-size:.85rem;color:var(--md-cream)">${job.address || '—'}</div></div>
+      <div><div style="font-family:'Syne Mono',monospace;font-size:.58rem;letter-spacing:.15em;color:var(--md-gold-dk);margin-bottom:.3rem">VISIT DATE</div>
+        <div style="font-size:.85rem;color:var(--md-cream)">${job.visit_date ? new Date(job.visit_date).toLocaleDateString('en-ZA') : '—'}</div></div>
+    </div>
+  </div>
+
+  <!-- STATUS -->
+  <div style="display:flex;gap:.5rem;margin-bottom:1rem;overflow-x:auto;padding-bottom:.25rem">
+    ${STAGES.map(s => `<button onclick="setJobStatus('${s.id}')" style="flex-shrink:0;padding:.4rem .75rem;border-radius:20px;font-family:'Syne Mono',monospace;font-size:.57rem;letter-spacing:.1em;border:1px solid ${job.status===s.id?'var(--md-gold)':'var(--md-border-lt)'};background:${job.status===s.id?'var(--md-gold-dk)':'var(--md-surface)'};color:${job.status===s.id?'var(--md-gold-lt)':'var(--md-muted)'};cursor:pointer;white-space:nowrap">${s.icon} ${s.label}</button>`).join('')}
+  </div>
+
+  <div class="ornament-divider"></div>
+
+  <!-- MEASUREMENTS -->
+  <div class="section-eyebrow">Dimensions & Measurements</div>
+  <div id="job-measurements" style="margin-bottom:.75rem">
+    ${(job.measurements||[]).map((m,i) => measurementRowHTML(i,m)).join('')}
+  </div>
+  <button class="add-line-btn" onclick="addMeasurement()">+ Add measurement</button>
+
+  <div class="ornament-divider"></div>
+
+  <!-- SKETCH -->
+  <div class="section-eyebrow">Site Sketch / Plan</div>
+  ${job.sketch
+    ? `<img src="${job.sketch}" style="width:100%;border-radius:var(--md-radius-lg);border:1px solid var(--md-border);margin-bottom:.75rem" onclick="openSketchForJob()" title="Tap to edit"/>
+       <button class="btn-secondary" onclick="openSketchForJob()" style="margin-bottom:.75rem">✏️ Edit Sketch</button>`
+    : `<button class="btn-secondary" onclick="openSketchForJob()" style="margin-bottom:.75rem">🖊️ Open Sketch Canvas</button>`}
+
+  <div class="ornament-divider"></div>
+
+  <!-- ANNOTATED PHOTOS -->
+  <div class="section-eyebrow">Site Photos & Annotations</div>
+  <div class="photo-grid" id="jobPhotoGrid">
+    ${(job.annotatedPhotos||[]).map((p,i) => `
+      <div style="position:relative">
+        <img class="photo-thumb" src="${p.annotated||p.original}" onclick="viewPhoto(this.src)" title="${p.label||''}"/>
+        <button onclick="editAnnotation(${i})" style="position:absolute;bottom:2px;right:2px;background:rgba(10,9,6,.8);border:1px solid var(--md-gold-dk);border-radius:3px;color:var(--md-gold);font-size:.6rem;padding:.1rem .3rem;cursor:pointer">✏️</button>
+      </div>`).join('')}
+    <div class="photo-placeholder" onclick="triggerJobPhoto()">📷</div>
+  </div>
+
+  <div class="ornament-divider"></div>
+
+  <!-- QUOTE / LINE ITEMS -->
+  <div class="section-eyebrow">Quote Builder</div>
+
+  <div class="quote-section">
+    <div class="quote-section-title">Scope / Description</div>
+    <textarea class="form-input" rows="3" placeholder="Describe the work — fencing type, material spec, area to cover..."
+      style="font-size:.82rem;resize:none"
+      onchange="updateJobQuoteField('scope',this.value)" oninput="updateJobQuoteField('scope',this.value)">${q.scope||''}</textarea>
+  </div>
+
+  <div class="quote-section">
+    <div class="quote-section-title">Callout / Site Visit Fee</div>
+    <div class="line-item">
+      <input class="line-desc" type="text" value="Site visit — ${job.address||'—'}" readonly style="opacity:.7"/>
+      <input class="line-amount" type="number" inputmode="decimal" id="jq-callout" value="${parseFloat(q.callout)||50}"
+        onchange="updateJobCallout(this.value)" oninput="updateJobCallout(this.value)"/>
+    </div>
+  </div>
+
+  <div class="quote-section">
+    <div class="quote-section-title">Line Items</div>
+    <div id="job-lines">
+      ${(q.lines||[]).map((l,i) => jobLineHTML(i,l)).join('')}
+    </div>
+    <button class="add-line-btn" onclick="addJobLine()">+ Add line item</button>
+  </div>
+
+  <!-- Discount -->
+  <div class="quote-section">
+    <div class="quote-section-title">Discount</div>
+    <div class="line-item">
+      <select class="line-desc" id="jq-discount-type" style="flex:0 0 110px;font-family:'Syne Mono',monospace;font-size:.72rem"
+        onchange="updateJobQuoteField('discountType',this.value)">
+        <option value="" ${!q.discountType?'selected':''}>No discount</option>
+        <option value="rand" ${q.discountType==='rand'?'selected':''}>Rand (R)</option>
+        <option value="pct"  ${q.discountType==='pct'?'selected':''}>Percent (%)</option>
+      </select>
+      <input class="line-amount" type="number" inputmode="decimal" placeholder="0" id="jq-discount-val"
+        value="${q.discountValue||''}"
+        onchange="updateJobQuoteField('discountValue',this.value)" oninput="updateJobQuoteField('discountValue',this.value)"
+        style="${!q.discountType?'opacity:.35':''}" ${!q.discountType?'disabled':''}/>
+    </div>
+  </div>
+
+  <div class="quote-totals" id="jobQuoteTotals"></div>
+
+  <div class="quote-section">
+    <div class="quote-section-title">Deposit Required</div>
+    <div class="line-item">
+      <input class="line-desc" type="text" placeholder="e.g. 50% deposit to confirm" value="${q.deposit||''}"
+        onchange="updateJobQuoteField('deposit',this.value)" oninput="updateJobQuoteField('deposit',this.value)"/>
+    </div>
+  </div>
+
+  <div class="quote-section">
+    <div class="quote-section-title">Payment Terms</div>
+    <textarea class="form-input" rows="2" placeholder="e.g. Balance on completion. EFT or cash accepted."
+      style="font-size:.82rem;resize:none"
+      onchange="updateJobQuoteField('terms',this.value)" oninput="updateJobQuoteField('terms',this.value)">${q.terms||''}</textarea>
+  </div>
+
+  <div class="quote-section">
+    <div class="quote-section-title">Quote Valid Until</div>
+    <input class="form-input" type="date" value="${q.validUntil||''}"
+      onchange="updateJobQuoteField('validUntil',this.value)" style="font-family:'Syne Mono',monospace;font-size:.82rem"/>
+  </div>
+
+  <div style="display:flex;gap:.6rem;margin-bottom:.75rem">
+    <button class="btn-primary" style="flex:1" onclick="generateJobPDF(false)">📄 Quote PDF</button>
+    <button class="btn-primary" style="flex:1;background:linear-gradient(135deg,#2d6b45,#4caf7a)" onclick="generateJobPDF(true)">📄 Invoice PDF</button>
+  </div>
+  <button class="btn-whatsapp" onclick="sendJobWhatsApp()">💬 WhatsApp Summary</button>
+
+  <div class="ornament-divider"></div>
+
+  <!-- NOTES -->
+  <div class="section-eyebrow">Job Notes</div>
+  <button class="btn-secondary" style="margin-bottom:.75rem" onclick="openJobNoteModal()">+ Add note</button>
+  <div id="jobNotesList">
+    ${(job.notes||[]).slice().reverse().map(n => `
+      <div class="history-entry">
+        <div class="history-date">${new Date(n.date).toLocaleString('en-ZA',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</div>
+        <div class="history-text">${n.text}</div>
+      </div>`).join('') || '<div style="color:var(--md-muted);font-size:.82rem;padding:.5rem 0">No notes yet</div>'}
+  </div>
+
+  <div class="ornament-divider"></div>
+  <button class="btn-danger" onclick="confirmDeleteJob('${job.id}')">Delete job</button>
+  <div style="height:2rem"></div>
+  `;
+
+  document.getElementById('jobDetailContent').innerHTML = html;
+  updateJobQuoteTotals();
+}
+
+function measurementRowHTML(i, m = {}) {
+  return `<div class="line-item" id="mrow-${i}">
+    <input class="line-desc" type="text" placeholder="e.g. Fence length" value="${m.label||''}"
+      onchange="updateMeasurement(${i},'label',this.value)" oninput="updateMeasurement(${i},'label',this.value)"/>
+    <input class="line-amount" type="number" inputmode="decimal" placeholder="0" value="${m.value||''}" style="max-width:80px"
+      onchange="updateMeasurement(${i},'value',this.value)" oninput="updateMeasurement(${i},'value',this.value)"/>
+    <select style="background:var(--md-panel);border:1px solid var(--md-border);border-radius:var(--md-radius);color:var(--md-cream);font-size:.75rem;padding:.5rem .4rem;flex-shrink:0"
+      onchange="updateMeasurement(${i},'unit',this.value)">
+      ${['m','m²','m³','mm','km','each','hrs','kg','L','bags','sheets','rolls','posts','panels'].map(u =>
+        `<option value="${u}" ${(m.unit||'m')===u?'selected':''}>${u}</option>`
+      ).join('')}
+    </select>
+    <button class="line-del" onclick="removeMeasurement(${i})">✕</button>
+  </div>`;
+}
+
+function addMeasurement() {
+  if (!currentJob) return;
+  if (!currentJob.measurements) currentJob.measurements = [];
+  const i = currentJob.measurements.length;
+  currentJob.measurements.push({ label:'', value:'', unit:'m' });
+  document.getElementById('job-measurements').insertAdjacentHTML('beforeend', measurementRowHTML(i, currentJob.measurements[i]));
+  autosaveJob();
+}
+
+function updateMeasurement(i, field, val) {
+  if (!currentJob?.measurements) return;
+  if (!currentJob.measurements[i]) currentJob.measurements[i] = { label:'', value:'', unit:'m' };
+  currentJob.measurements[i][field] = val;
+  autosaveJob();
+}
+
+function removeMeasurement(i) {
+  if (!currentJob?.measurements) return;
+  currentJob.measurements.splice(i, 1);
+  autosaveJob();
+  renderJobDetail(currentJob);
+}
+
+function jobLineHTML(i, l = {}) {
+  const units = ['each','m','m²','m³','hrs','days','kg','bags','rolls','sheets','panels','posts','lm','set'];
+  return `<div class="line-item" id="jl-${i}" style="flex-wrap:wrap;gap:.4rem">
+    <input class="line-desc" type="text" placeholder="e.g. 90×38 pine rafter, 3.6m" value="${l.description||''}" style="flex:2;min-width:120px"
+      onchange="updateJobLine(${i},'description',this.value)" oninput="updateJobLine(${i},'description',this.value)"/>
+    <input type="number" inputmode="decimal" placeholder="Qty" value="${l.qty||''}" style="width:56px;background:var(--md-panel);border:1px solid var(--md-border);border-radius:var(--md-radius);color:var(--md-cream);font-size:.82rem;padding:.55rem .5rem;-webkit-appearance:none"
+      onchange="updateJobLine(${i},'qty',this.value)" oninput="updateJobLine(${i},'qty',this.value)"/>
+    <select style="background:var(--md-panel);border:1px solid var(--md-border);border-radius:var(--md-radius);color:var(--md-cream);font-size:.72rem;padding:.55rem .4rem;flex-shrink:0"
+      onchange="updateJobLine(${i},'unit',this.value)">
+      ${units.map(u => `<option value="${u}" ${(l.unit||'each')===u?'selected':''}>${u}</option>`).join('')}
+    </select>
+    <input class="line-amount" type="number" inputmode="decimal" placeholder="Unit R" value="${l.unit_price||''}"
+      onchange="updateJobLine(${i},'unit_price',this.value)" oninput="updateJobLine(${i},'unit_price',this.value)"/>
+    <button class="line-del" onclick="removeJobLine(${i})">✕</button>
+    <div style="width:100%;font-family:'Syne Mono',monospace;font-size:.6rem;color:var(--md-gold-dk);padding-left:.25rem">
+      = R ${((parseFloat(l.qty)||1)*(parseFloat(l.unit_price)||0)).toLocaleString('en-ZA')}
+    </div>
+  </div>`;
+}
+
+function addJobLine() {
+  if (!currentJob) return;
+  if (!currentJob.quote) currentJob.quote = { callout:50, lines:[] };
+  if (!currentJob.quote.lines) currentJob.quote.lines = [];
+  const i = currentJob.quote.lines.length;
+  currentJob.quote.lines.push({ description:'', qty:1, unit:'each', unit_price:0 });
+  document.getElementById('job-lines').insertAdjacentHTML('beforeend', jobLineHTML(i, currentJob.quote.lines[i]));
+  autosaveJob();
+}
+
+function updateJobLine(i, field, val) {
+  if (!currentJob?.quote?.lines) return;
+  if (!currentJob.quote.lines[i]) currentJob.quote.lines[i] = { description:'', qty:1, unit:'each', unit_price:0 };
+  currentJob.quote.lines[i][field] = (field === 'qty' || field === 'unit_price') ? (parseFloat(val)||0) : val;
+  updateJobQuoteTotals();
+  autosaveJob();
+  // Refresh the line total label
+  const row = document.getElementById('jl-' + i);
+  if (row) {
+    const l = currentJob.quote.lines[i];
+    const lineTotal = row.querySelector('div[style*="font-family"]');
+    if (lineTotal) lineTotal.textContent = `= R ${((parseFloat(l.qty)||1)*(parseFloat(l.unit_price)||0)).toLocaleString('en-ZA')}`;
+  }
+}
+
+function removeJobLine(i) {
+  if (!currentJob?.quote?.lines) return;
+  currentJob.quote.lines.splice(i, 1);
+  autosaveJob();
+  renderJobDetail(currentJob);
+}
+
+function updateJobCallout(val) {
+  if (!currentJob.quote) currentJob.quote = { callout:50, lines:[] };
+  currentJob.quote.callout = parseFloat(val) || 0;
+  updateJobQuoteTotals();
+  autosaveJob();
+}
+
+function updateJobQuoteField(field, val) {
+  if (!currentJob.quote) currentJob.quote = { callout:50, lines:[], discountType:'', discountValue:'', deposit:'', terms:'', scope:'', validUntil:'' };
+  currentJob.quote[field] = val;
+  if (field === 'discountType') {
+    const valEl = document.getElementById('jq-discount-val');
+    if (valEl) {
+      valEl.disabled = !val;
+      valEl.style.opacity = val ? '1' : '.35';
+      if (!val) { valEl.value = ''; currentJob.quote.discountValue = ''; }
+    }
+  }
+  updateJobQuoteTotals();
+  autosaveJob();
+}
+
+function updateJobQuoteTotals() {
+  const q = currentJob?.quote || {};
+  const callout  = parseFloat(q.callout) || 0;
+  const lines    = (q.lines||[]).reduce((s,l) => s + (parseFloat(l.qty)||1) * (parseFloat(l.unit_price)||0), 0);
+  const subtotal = callout + lines;
+  const discAmt  = calcDiscount(q, subtotal);
+  const total    = subtotal - discAmt;
+
+  const discLabel = q.discountType === 'pct'
+    ? `Discount (${q.discountValue||0}%)`
+    : q.discountType === 'rand' ? 'Discount' : null;
+
+  const el = document.getElementById('jobQuoteTotals');
+  if (!el) return;
+  el.innerHTML = `
+    <div class="total-line"><span class="tl-label">Callout</span><span class="tl-val">R ${callout.toLocaleString('en-ZA')}</span></div>
+    <div class="total-line"><span class="tl-label">Line Items</span><span class="tl-val">R ${lines.toLocaleString('en-ZA')}</span></div>
+    <div class="total-line"><span class="tl-label">Subtotal</span><span class="tl-val">R ${subtotal.toLocaleString('en-ZA')}</span></div>
+    ${discAmt > 0 ? `<div class="total-line"><span class="tl-label" style="color:var(--md-success)">${discLabel}</span><span class="tl-val" style="color:var(--md-success)">-R ${discAmt.toLocaleString('en-ZA')}</span></div>` : ''}
+    <div class="total-line grand"><span class="tl-label">Total</span><span class="tl-val">R ${total.toLocaleString('en-ZA')}</span></div>
+    <div style="font-size:.68rem;color:var(--md-muted);margin-top:.4rem">VAT not registered — no VAT charged</div>`;
+}
+
+async function setJobStatus(stageId) {
+  if (!currentJob) return;
+  currentJob.status = stageId;
+  currentJob.updated_at = Date.now();
+  await dbPutJob(currentJob);
+  renderJobDetail(currentJob);
+  showToast(`Status: ${STAGES.find(s=>s.id===stageId)?.label}`, 'success');
+}
+
+let jobSaveTimer = null;
+function autosaveJob() {
+  if (!currentJob) return;
+  currentJob.updated_at = Date.now();
+  clearTimeout(jobSaveTimer);
+  jobSaveTimer = setTimeout(async () => {
+    await dbPutJob(currentJob);
+  }, 800);
+}
+
+function openJobNoteModal() {
+  document.getElementById('note-text').value = '';
+  // Reuse the existing addNoteModal but save to job
+  document.getElementById('confirmBtn').style.display = 'none'; // hide confirm btn
+  document.getElementById('addNoteModal').dataset.target = 'job';
+  openModal('addNoteModal');
+}
+
+// Override saveNote to handle both client and job notes
+const _origSaveNote = typeof saveNote === 'function' ? saveNote : null;
+async function saveNote() {
+  const text = document.getElementById('note-text').value.trim();
+  if (!text) return;
+  const target = document.getElementById('addNoteModal').dataset.target;
+
+  if (target === 'job' && currentJob) {
+    if (!currentJob.notes) currentJob.notes = [];
+    currentJob.notes.push({ date: Date.now(), text });
+    currentJob.updated_at = Date.now();
+    await dbPutJob(currentJob);
+    closeModal('addNoteModal');
+    document.getElementById('addNoteModal').dataset.target = '';
+    document.getElementById('note-text').value = '';
+    showToast('Note saved', 'success');
+    renderJobDetail(currentJob);
+  } else if (currentClient) {
+    if (!currentClient.notes) currentClient.notes = [];
+    currentClient.notes.push({ date: Date.now(), text });
+    currentClient.updated_at = Date.now();
+    await dbPutClient(currentClient);
+    closeModal('addNoteModal');
+    document.getElementById('addNoteModal').dataset.target = '';
+    document.getElementById('note-text').value = '';
+    showToast('Note saved', 'success');
+    if (currentDetailTab === 'notes') renderClientNotesPhotos(currentClient);
+    else renderClientDetail(currentClient);
+  }
+}
+
+function confirmDeleteJob(id) {
+  document.getElementById('confirmTitle').textContent = 'Delete Job';
+  document.getElementById('confirmMsg').textContent = 'This will permanently delete this job, quote, photos and notes.';
+  document.getElementById('confirmBtn').style.display = '';
+  document.getElementById('confirmBtn').onclick = async () => {
+    await dbDelJob(id);
+    cloudDeleteJob(id).catch(() => {});
+    closeModal('confirmModal');
+    showToast('Job deleted', 'info');
+    currentJob = null;
+    showScreen('client-detail');
+    switchDetailTab('jobs');
+  };
+  openModal('confirmModal');
+}
+
+// WhatsApp for job
+function sendJobWhatsApp() {
+  if (!currentClient || !currentJob) return;
+  const q = currentJob.quote || {};
+  const callout  = parseFloat(q.callout)||0;
+  const lines    = (q.lines||[]).reduce((s,l) => s + (parseFloat(l.qty)||1)*(parseFloat(l.unit_price)||0), 0);
+  const subtotal = callout + lines;
+  const discAmt  = calcDiscount(q, subtotal);
+  const total    = subtotal - discAmt;
+
+  let msg = `Hi ${currentClient.name} 👋\n\nQuote from *Elysium Works* — ${currentJob.ref}\n\n`;
+  msg += `*Job:* ${currentJob.description}\n`;
+  if (currentJob.address) msg += `*Site:* ${currentJob.address}\n`;
+  if (q.scope?.trim()) msg += `\n_${q.scope.trim()}_\n`;
+  msg += `\n*Quote Total: R${total.toLocaleString('en-ZA')}*\n`;
+  if (q.deposit) msg += `Deposit: ${q.deposit}\n`;
+  msg += `\n_Valid 30 days · Elysium Works · 071 818 1132_`;
+
+  const clean = (currentClient.phone||'').replace(/\D/g,'');
+  const num = clean.startsWith('0') ? '27' + clean.slice(1) : clean;
+  window.open(`https://wa.me/${num}?text=${encodeURIComponent(msg)}`, '_blank');
+}
+
+// ── JOB PHOTO HANDLING ──
+let jobPhotoAnnotateIdx = null;
+
+function triggerJobPhoto() {
+  if (!currentJob) return;
+  jobPhotoAnnotateIdx = null;
+  document.getElementById('photo-capture').click();
+}
+
+function editAnnotation(idx) {
+  if (!currentJob?.annotatedPhotos?.[idx]) return;
+  jobPhotoAnnotateIdx = idx;
+  openAnnotateScreen(currentJob.annotatedPhotos[idx].original, idx);
+}
+
+// Extend the photo handler
+document.getElementById('photo-capture').addEventListener('change', async function(e) {
+  // Job photo handler — runs if we're in job-detail and crmPhotoTarget is not set
+  if (crmPhotoTarget || !currentJob || !document.getElementById('screen-job-detail').classList.contains('active')) return;
+  const files = Array.from(e.target.files);
+  if (!files.length) return;
+
+  for (const file of files) {
+    const compressed = await compressImage(file, 1200, 0.82);
+    if (!currentJob.annotatedPhotos) currentJob.annotatedPhotos = [];
+    currentJob.annotatedPhotos.push({ original: compressed, annotated: compressed, label: '' });
+  }
+  currentJob.updated_at = Date.now();
+  await dbPutJob(currentJob);
+
+  // Open annotation screen for last photo
+  const lastIdx = currentJob.annotatedPhotos.length - 1;
+  openAnnotateScreen(currentJob.annotatedPhotos[lastIdx].original, lastIdx);
+  this.value = '';
+});
+
+// ── SKETCH MODULE ──────────────────────────────────────────────────────────────
+let sketchTool = 'pen';
+let sketchColor = '#e8c87a';
+let sketchSize = 4;
+let sketchHistory = [];  // array of ImageData for undo
+let sketchIsDrawing = false;
+let sketchStart = { x:0, y:0 };
+let sketchCanvas, sketchCtx;
+let pendingTextX = 0, pendingTextY = 0;
+
+function openSketchForJob() {
+  if (!currentJob) return;
+  showScreen('sketch');
+  document.getElementById('sketchBackBtn').onclick = () => { showScreen('job-detail'); };
+
+  requestAnimationFrame(() => {
+    sketchCanvas = document.getElementById('sketchCanvas');
+    const container = sketchCanvas.parentElement;
+    sketchCanvas.width  = container.clientWidth  || window.innerWidth;
+    sketchCanvas.height = container.clientHeight || (window.innerHeight - 160);
+    sketchCtx = sketchCanvas.getContext('2d');
+
+    // Fill dark background
+    sketchCtx.fillStyle = '#1a1610';
+    sketchCtx.fillRect(0, 0, sketchCanvas.width, sketchCanvas.height);
+
+    // Load existing sketch if any
+    if (currentJob.sketch) {
+      const img = new Image();
+      img.onload = () => sketchCtx.drawImage(img, 0, 0, sketchCanvas.width, sketchCanvas.height);
+      img.src = currentJob.sketch;
+    }
+
+    sketchHistory = [];
+    attachSketchEvents();
+  });
+}
+
+function setSketchTool(tool) {
+  sketchTool = tool;
+  document.querySelectorAll('.sketch-tool-btn[id^="stool-"]').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById('stool-' + tool);
+  if (btn) btn.classList.add('active');
+  const textBar = document.getElementById('textInputBar');
+  textBar.style.display = tool === 'text' ? 'flex' : 'none';
+}
+
+function getSketchPos(e) {
+  const rect = sketchCanvas.getBoundingClientRect();
+  const src = e.touches ? e.touches[0] : e;
+  return {
+    x: (src.clientX - rect.left) * (sketchCanvas.width / rect.width),
+    y: (src.clientY - rect.top)  * (sketchCanvas.height / rect.height),
+  };
+}
+
+function attachSketchEvents() {
+  sketchCanvas.addEventListener('pointerdown', sketchDown);
+  sketchCanvas.addEventListener('pointermove', sketchMove);
+  sketchCanvas.addEventListener('pointerup',   sketchUp);
+  sketchCanvas.addEventListener('pointerleave',sketchUp);
+}
+
+function saveSketchSnapshot() {
+  sketchHistory.push(sketchCtx.getImageData(0, 0, sketchCanvas.width, sketchCanvas.height));
+  if (sketchHistory.length > 30) sketchHistory.shift();
+}
+
+function sketchDown(e) {
+  e.preventDefault();
+  if (sketchTool === 'text') {
+    const pos = getSketchPos(e);
+    pendingTextX = pos.x;
+    pendingTextY = pos.y;
+    const input = document.getElementById('sketchTextInput');
+    input.focus();
+    input.onkeydown = (ke) => { if (ke.key === 'Enter') placeSketchText(); };
+    return;
+  }
+  saveSketchSnapshot();
+  sketchIsDrawing = true;
+  const pos = getSketchPos(e);
+  sketchStart = pos;
+  if (sketchTool === 'pen' || sketchTool === 'erase') {
+    sketchCtx.beginPath();
+    sketchCtx.moveTo(pos.x, pos.y);
+  }
+  sketchCtx.strokeStyle = sketchTool === 'erase' ? '#1a1610' : sketchColor;
+  sketchCtx.lineWidth = sketchTool === 'erase' ? sketchSize * 4 : sketchSize;
+  sketchCtx.lineCap = 'round';
+  sketchCtx.lineJoin = 'round';
+}
+
+let sketchOverlay = null;
+function sketchMove(e) {
+  e.preventDefault();
+  if (!sketchIsDrawing) return;
+  const pos = getSketchPos(e);
+
+  if (sketchTool === 'pen' || sketchTool === 'erase') {
+    sketchCtx.lineTo(pos.x, pos.y);
+    sketchCtx.stroke();
+  } else if (sketchTool === 'line' || sketchTool === 'rect') {
+    // Restore last snapshot to redraw preview line/rect
+    if (sketchHistory.length) sketchCtx.putImageData(sketchHistory[sketchHistory.length-1], 0, 0);
+    sketchCtx.strokeStyle = sketchColor;
+    sketchCtx.lineWidth = sketchSize;
+    sketchCtx.beginPath();
+    if (sketchTool === 'line') {
+      sketchCtx.moveTo(sketchStart.x, sketchStart.y);
+      sketchCtx.lineTo(pos.x, pos.y);
+    } else {
+      sketchCtx.rect(sketchStart.x, sketchStart.y, pos.x - sketchStart.x, pos.y - sketchStart.y);
+    }
+    sketchCtx.stroke();
+  }
+}
+
+function sketchUp(e) {
+  sketchIsDrawing = false;
+  if (sketchTool === 'pen' || sketchTool === 'erase') {
+    sketchCtx.closePath();
+  }
+}
+
+function placeSketchText() {
+  const text = document.getElementById('sketchTextInput').value.trim();
+  if (!text) return;
+  sketchCtx.fillStyle = sketchColor;
+  sketchCtx.font = `${sketchSize * 4 + 10}px 'Syne Mono', monospace`;
+  sketchCtx.fillText(text, pendingTextX, pendingTextY);
+  document.getElementById('sketchTextInput').value = '';
+}
+
+function clearSketch() {
+  saveSketchSnapshot();
+  sketchCtx.fillStyle = '#1a1610';
+  sketchCtx.fillRect(0, 0, sketchCanvas.width, sketchCanvas.height);
+}
+
+async function saveSketch() {
+  if (!currentJob || !sketchCanvas) return;
+  currentJob.sketch = sketchCanvas.toDataURL('image/png', 0.85);
+  currentJob.updated_at = Date.now();
+  await dbPutJob(currentJob);
+  showToast('Sketch saved', 'success');
+  showScreen('job-detail');
+  renderJobDetail(currentJob);
+}
+
+// ── ANNOTATION MODULE ──────────────────────────────────────────────────────────
+let annTool = 'line';
+let annColor = '#c94c4c';
+let annCanvas, annCtx;
+let annIsDrawing = false;
+let annStart = { x:0, y:0 };
+let annHistory = [];
+let pendingAnnText = false;
+let pendingAnnX = 0, pendingAnnY = 0;
+let annotateJobPhotoIdx = null;
+
+function openAnnotateScreen(imageSrc, jobPhotoIdx) {
+  annotateJobPhotoIdx = jobPhotoIdx;
+  showScreen('annotate');
+  document.getElementById('annotateBackBtn').onclick = () => {
+    showScreen('job-detail');
+    renderJobDetail(currentJob);
+  };
+
+  requestAnimationFrame(() => {
+    annCanvas = document.getElementById('annotateCanvas');
+    const container = annCanvas.parentElement;
+    annCanvas.width  = container.clientWidth  || window.innerWidth;
+    annCanvas.height = container.clientHeight || (window.innerHeight - 160);
+    annCtx = annCanvas.getContext('2d');
+
+    const img = new Image();
+    img.onload = () => {
+      // Scale image to fill canvas maintaining aspect ratio
+      const scale = Math.min(annCanvas.width / img.width, annCanvas.height / img.height);
+      const w = img.width * scale;
+      const h = img.height * scale;
+      const ox = (annCanvas.width - w) / 2;
+      const oy = (annCanvas.height - h) / 2;
+      annCtx.fillStyle = '#111';
+      annCtx.fillRect(0, 0, annCanvas.width, annCanvas.height);
+      annCtx.drawImage(img, ox, oy, w, h);
+      annHistory = [annCtx.getImageData(0, 0, annCanvas.width, annCanvas.height)];
+    };
+    img.src = imageSrc;
+
+    annTool = 'line';
+    document.querySelectorAll('.sketch-tool-btn[id^="atool-"]').forEach(b => b.classList.remove('active'));
+    const lineBtn = document.getElementById('atool-line');
+    if (lineBtn) lineBtn.classList.add('active');
+
+    attachAnnotateEvents();
+  });
+}
+
+function setAnnotateTool(tool) {
+  annTool = tool;
+  document.querySelectorAll('.sketch-tool-btn[id^="atool-"]').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById('atool-' + tool);
+  if (btn) btn.classList.add('active');
+
+  const bar = document.getElementById('annTextBar');
+  if (bar) bar.style.display = tool === 'text' ? 'flex' : 'none';
+}
+
+function getAnnPos(e) {
+  const rect = annCanvas.getBoundingClientRect();
+  const src = e.touches ? e.touches[0] : e;
+  return {
+    x: (src.clientX - rect.left) * (annCanvas.width / rect.width),
+    y: (src.clientY - rect.top)  * (annCanvas.height / rect.height),
+  };
+}
+
+function attachAnnotateEvents() {
+  annCanvas.removeEventListener('pointerdown', annDown);
+  annCanvas.removeEventListener('pointermove', annMove);
+  annCanvas.removeEventListener('pointerup',   annUp);
+  annCanvas.addEventListener('pointerdown', annDown);
+  annCanvas.addEventListener('pointermove', annMove);
+  annCanvas.addEventListener('pointerup',   annUp);
+}
+
+function saveAnnSnapshot() {
+  annHistory.push(annCtx.getImageData(0, 0, annCanvas.width, annCanvas.height));
+  if (annHistory.length > 20) annHistory.shift();
+}
+
+function annDown(e) {
+  e.preventDefault();
+  const pos = getAnnPos(e);
+  if (annTool === 'text') {
+    pendingAnnX = pos.x;
+    pendingAnnY = pos.y;
+    pendingAnnText = true;
+    const input = document.getElementById('annTextInput');
+    if (input) { input.focus(); }
+    return;
+  }
+  saveAnnSnapshot();
+  annIsDrawing = true;
+  annStart = pos;
+  annCtx.strokeStyle = annColor;
+  annCtx.fillStyle = annColor;
+  annCtx.lineWidth = 2;
+  annCtx.lineCap = 'round';
+  if (annTool === 'erase') { annCtx.strokeStyle = '#111'; annCtx.lineWidth = 20; }
+  if (annTool === 'pen') { annCtx.beginPath(); annCtx.moveTo(pos.x, pos.y); }
+}
+
+function annMove(e) {
+  e.preventDefault();
+  if (!annIsDrawing) return;
+  const pos = getAnnPos(e);
+
+  if (annTool === 'pen' || annTool === 'erase') {
+    annCtx.lineTo(pos.x, pos.y);
+    annCtx.stroke();
+    return;
+  }
+  // For line, arrow, rect — restore snapshot and redraw preview
+  if (annHistory.length) annCtx.putImageData(annHistory[annHistory.length-1], 0, 0);
+  annCtx.strokeStyle = annColor;
+  annCtx.lineWidth = 2;
+  annCtx.beginPath();
+
+  if (annTool === 'line') {
+    annCtx.moveTo(annStart.x, annStart.y);
+    annCtx.lineTo(pos.x, pos.y);
+    annCtx.stroke();
+    // Length label
+    const dx = pos.x - annStart.x, dy = pos.y - annStart.y;
+    const px_len = Math.sqrt(dx*dx + dy*dy);
+    const mid = { x:(annStart.x+pos.x)/2, y:(annStart.y+pos.y)/2 };
+    annCtx.fillStyle = 'rgba(10,9,6,.75)';
+    const labelW = 60, labelH = 18;
+    annCtx.fillRect(mid.x - labelW/2, mid.y - labelH, labelW, labelH);
+    annCtx.fillStyle = annColor;
+    annCtx.font = '11px monospace';
+    annCtx.textAlign = 'center';
+    annCtx.fillText(`${Math.round(px_len)}px`, mid.x, mid.y - 5);
+    annCtx.textAlign = 'left';
+  } else if (annTool === 'arrow') {
+    drawArrow(annCtx, annStart.x, annStart.y, pos.x, pos.y, annColor);
+  } else if (annTool === 'rect') {
+    annCtx.rect(annStart.x, annStart.y, pos.x - annStart.x, pos.y - annStart.y);
+    annCtx.stroke();
+  }
+}
+
+function annUp(e) {
+  if (annTool !== 'text') annIsDrawing = false;
+}
+
+function drawArrow(ctx, fromX, fromY, toX, toY, color) {
+  const headLen = 14;
+  const angle = Math.atan2(toY - fromY, toX - fromX);
+  ctx.beginPath();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
+  ctx.moveTo(fromX, fromY);
+  ctx.lineTo(toX, toY);
+  ctx.lineTo(toX - headLen * Math.cos(angle - Math.PI/6), toY - headLen * Math.sin(angle - Math.PI/6));
+  ctx.moveTo(toX, toY);
+  ctx.lineTo(toX - headLen * Math.cos(angle + Math.PI/6), toY - headLen * Math.sin(angle + Math.PI/6));
+  ctx.stroke();
+}
+
+function placeAnnotationText() {
+  const text = document.getElementById('annTextInput').value.trim();
+  if (!text || !pendingAnnText) return;
+  saveAnnSnapshot();
+  annCtx.fillStyle = annColor;
+  annCtx.strokeStyle = 'rgba(0,0,0,.7)';
+  annCtx.font = 'bold 14px monospace';
+  annCtx.lineWidth = 3;
+  annCtx.strokeText(text, pendingAnnX, pendingAnnY);
+  annCtx.fillText(text, pendingAnnX, pendingAnnY);
+  document.getElementById('annTextInput').value = '';
+  pendingAnnText = false;
+}
+
+function clearAnnotation() {
+  if (annHistory.length) {
+    annCtx.putImageData(annHistory[0], 0, 0);
+    annHistory = [annHistory[0]];
+  }
+}
+
+async function saveAnnotation() {
+  if (!currentJob || annotateJobPhotoIdx === null) return;
+  const annotated = annCanvas.toDataURL('image/jpeg', 0.82);
+  if (!currentJob.annotatedPhotos) currentJob.annotatedPhotos = [];
+  if (currentJob.annotatedPhotos[annotateJobPhotoIdx]) {
+    currentJob.annotatedPhotos[annotateJobPhotoIdx].annotated = annotated;
+  } else {
+    currentJob.annotatedPhotos.push({ original: annotated, annotated, label: '' });
+  }
+  currentJob.updated_at = Date.now();
+  await dbPutJob(currentJob);
+  showToast('Photo annotation saved', 'success');
+  showScreen('job-detail');
+  renderJobDetail(currentJob);
+}
+
+// ── JOB PDF ──
+async function generateJobPDF(isInvoice) {
+  if (typeof window.jspdf === 'undefined') {
+    showToast('PDF library loading — try again in a moment', 'info');
+    return;
+  }
+  if (!currentJob || !currentClient) return;
+
+  const { jsPDF } = window.jspdf;
+  const job = currentJob;
+  const client = currentClient;
+  const q = job.quote || {};
+  const callout = parseFloat(q.callout)||0;
+  const lines   = (q.lines||[]).filter(l => l.description);
+  const linesTotal = lines.reduce((s,l) => s+(parseFloat(l.qty)||1)*(parseFloat(l.unit_price)||0), 0);
+  const subtotal = callout + linesTotal;
+  const discAmt  = calcDiscount(q, subtotal);
+  const total    = subtotal - discAmt;
+  const settingsRec = await dbGet('settings', 'company');
+  const co = settingsRec ? settingsRec.value : {};
+
+  const doc = new jsPDF({ unit:'mm', format:'a4', orientation:'portrait' });
+  const W = 210, M = 18, CW = W - M*2;
+  let y = 0;
+
+  const hex = h => {
+    const r=parseInt(h.slice(1,3),16), g=parseInt(h.slice(3,5),16), b=parseInt(h.slice(5,7),16);
+    return [r,g,b];
+  };
+
+  function checkPg(need=20) {
+    if (y+need > 270) {
+      doc.addPage(); y=20;
+      doc.setFillColor(...hex('#0a0906')); doc.rect(0,0,W,12,'F');
+      doc.setTextColor(...hex('#7a5815')); doc.setFontSize(7); doc.setFont('helvetica','normal');
+      doc.text(`ELYSIUM WORKS · ${isInvoice?'INVOICE':'QUOTE'} ${job.ref||''}`, M, 8);
+      doc.text(client.name, W-M, 8, {align:'right'});
+    }
+  }
+
+  // HEADER
+  doc.setFillColor(...hex('#0a0906')); doc.rect(0,0,W,55,'F');
+  doc.setFillColor(...hex('#110e09')); doc.rect(0,0,8,297,'F');
+  doc.setTextColor(...hex('#7a5815')); doc.setFontSize(7); doc.setFont('helvetica','normal');
+  doc.text('✦ ELYSIUM WORKS', M, 12);
+  doc.setTextColor(...hex('#e8c87a')); doc.setFontSize(20); doc.setFont('helvetica','bold');
+  doc.text(isInvoice ? 'INVOICE' : 'QUOTATION', M, 26);
+  doc.setTextColor(...hex('#7a5815')); doc.setFontSize(7.5); doc.setFont('helvetica','normal');
+  doc.text('KZN SOUTH COAST · SOUTH AFRICA', M, 34);
+
+  const docDate = new Date().toLocaleDateString('en-ZA',{day:'numeric',month:'long',year:'numeric'});
+  doc.setTextColor(...hex('#c9943c')); doc.setFontSize(9); doc.setFont('helvetica','normal');
+  doc.text(docDate, W-M, 20, {align:'right'});
+  if (job.ref) {
+    doc.setTextColor(...hex('#7a5815')); doc.setFontSize(8); doc.setFont('helvetica','bold');
+    doc.text(job.ref, W-M, 28, {align:'right'});
+  }
+
+  y = 65;
+
+  // CLIENT BOX
+  doc.setFillColor(...hex('#1a1610')); doc.roundedRect(M,y,CW,38,3,3,'F');
+  doc.setDrawColor(...hex('#3d3526')); doc.roundedRect(M,y,CW,38,3,3,'S');
+  const halfCW = CW/2;
+  doc.setTextColor(...hex('#7a5815')); doc.setFontSize(6.5); doc.setFont('helvetica','normal');
+  doc.text('CLIENT', M+6, y+9); doc.text('PHONE', M+halfCW, y+9);
+  doc.setTextColor(...hex('#f0e6ce')); doc.setFontSize(10); doc.setFont('helvetica','bold');
+  doc.text(client.name||'—', M+6, y+17); doc.text(client.phone||'—', M+halfCW, y+17);
+  doc.setTextColor(...hex('#7a5815')); doc.setFontSize(6.5); doc.setFont('helvetica','normal');
+  doc.text('SITE ADDRESS', M+6, y+25); doc.text('JOB TYPE', M+halfCW, y+25);
+  doc.setTextColor(...hex('#f0e6ce')); doc.setFontSize(9); doc.setFont('helvetica','bold');
+  doc.text(job.address||'—', M+6, y+33);
+  doc.text(job.type||'—', M+halfCW, y+33);
+  y += 46;
+
+  // SCOPE
+  if (q.scope?.trim()) {
+    doc.setFillColor(...hex('#111108')); doc.rect(M,y,CW,8,'F');
+    doc.setDrawColor(...hex('#3A6B4F')); doc.rect(M,y,3,8,'F');
+    doc.setTextColor(255,255,255); doc.setFontSize(7.5); doc.setFont('helvetica','bold');
+    doc.text('SCOPE OF WORK', M+6, y+5.5); y+=10;
+    const scopeLines = doc.splitTextToSize(q.scope.trim(), CW-8);
+    const sh = scopeLines.length*5.5+6;
+    doc.setFillColor(255,255,255); doc.rect(M,y,CW,sh,'F');
+    doc.setDrawColor(220,220,215); doc.rect(M,y,CW,sh,'S');
+    doc.setTextColor(30,30,30); doc.setFontSize(8.5); doc.setFont('helvetica','normal');
+    doc.text(scopeLines, M+4, y+5.5); y+=sh+6;
+  }
+
+  // MEASUREMENTS (if any)
+  if (job.measurements?.length) {
+    doc.setFillColor(...hex('#111108')); doc.rect(M,y,CW,8,'F');
+    doc.setDrawColor(...hex('#3A6B4F')); doc.rect(M,y,3,8,'F');
+    doc.setTextColor(255,255,255); doc.setFontSize(7.5); doc.setFont('helvetica','bold');
+    doc.text('SITE DIMENSIONS', M+6, y+5.5); y+=10;
+    job.measurements.forEach(m => {
+      if (!m.label) return;
+      doc.setFillColor(255,255,255); doc.rect(M,y,CW,8,'F');
+      doc.setTextColor(30,30,30); doc.setFontSize(8.5); doc.setFont('helvetica','normal');
+      doc.text(m.label, M+4, y+5.5);
+      doc.setFont('helvetica','bold'); doc.setTextColor(...hex('#1e5c38'));
+      doc.text(`${m.value} ${m.unit||'m'}`, W-M-2, y+5.5, {align:'right'});
+      doc.setDrawColor(220,220,215); doc.line(M,y+8,W-M,y+8);
+      y+=9;
+    });
+    y+=4;
+  }
+
+  // SKETCH (embed if exists)
+  if (job.sketch) {
+    checkPg(80);
+    doc.setFillColor(...hex('#111108')); doc.rect(M,y,CW,8,'F');
+    doc.setTextColor(255,255,255); doc.setFontSize(7.5); doc.setFont('helvetica','bold');
+    doc.text('SITE SKETCH / PLAN', M+6, y+5.5); y+=12;
+    try {
+      const skH = 70;
+      doc.addImage(job.sketch, 'PNG', M, y, CW, skH);
+      doc.setDrawColor(...hex('#3d3526'));
+      doc.rect(M, y, CW, skH, 'S');
+      y += skH + 6;
+    } catch(e) {}
+  }
+
+  // ANNOTATED PHOTOS (first 4)
+  const photosToEmbed = (job.annotatedPhotos||[]).slice(0,4);
+  if (photosToEmbed.length) {
+    checkPg(50);
+    doc.setFillColor(...hex('#111108')); doc.rect(M,y,CW,8,'F');
+    doc.setTextColor(255,255,255); doc.setFontSize(7.5); doc.setFont('helvetica','bold');
+    doc.text('SITE PHOTOS', M+6, y+5.5); y+=12;
+    const imgW = (CW-4)/2, imgH = imgW*0.6;
+    let px = M, col = 0;
+    for (const ph of photosToEmbed) {
+      checkPg(imgH+4);
+      try {
+        doc.addImage(ph.annotated||ph.original, 'JPEG', px, y, imgW, imgH);
+        if (ph.label) {
+          doc.setTextColor(...hex('#7a5815')); doc.setFontSize(6.5); doc.setFont('helvetica','italic');
+          doc.text(ph.label, px, y+imgH+4);
+        }
+      } catch(e) {}
+      col++; px = col%2===0 ? M : M+imgW+4;
+      if (col%2===0) y+=imgH+8;
+    }
+    if (col%2!==0) y+=imgH+8;
+  }
+
+  // LINE ITEMS
+  const addSection = (title, rows) => {
+    if (!rows.length) return;
+    checkPg(16);
+    doc.setFillColor(...hex('#264736')); doc.rect(M,y,CW,8,'F');
+    doc.setDrawColor(...hex('#3A6B4F')); doc.rect(M,y,3,8,'F');
+    doc.setTextColor(255,255,255); doc.setFontSize(7.5); doc.setFont('helvetica','bold');
+    doc.text(title, M+6, y+5.5); y+=10;
+    rows.forEach(l => {
+      checkPg(10);
+      const lineTotal = (parseFloat(l.qty)||1)*(parseFloat(l.unit_price)||0);
+      doc.setFillColor(255,255,255); doc.rect(M,y,CW,9,'F');
+      doc.setTextColor(30,30,30); doc.setFontSize(8.5); doc.setFont('helvetica','normal');
+      const dlines = doc.splitTextToSize(l.description||'', CW-50);
+      doc.text(dlines, M+4, y+6);
+      doc.setTextColor(...hex('#555')); doc.setFontSize(7.5);
+      doc.text(`${l.qty||1} ${l.unit||'each'}`, M+CW*0.6, y+6);
+      doc.setTextColor(...hex('#1e5c38')); doc.setFont('helvetica','bold'); doc.setFontSize(8.5);
+      doc.text(`R ${lineTotal.toLocaleString('en-ZA')}`, W-M-2, y+6, {align:'right'});
+      doc.setDrawColor(220,220,215); doc.line(M,y+9,W-M,y+9);
+      y+=dlines.length*5+5;
+    });
+    y+=3;
+  };
+
+  addSection('CALLOUT / SITE VISIT FEE', [{description:`Site visit — ${client.area||'local'}`, qty:1, unit:'each', unit_price:callout}]);
+  addSection('LINE ITEMS', lines);
+
+  // TOTALS BOX
+  checkPg(40);
+  y+=2;
+  const totH = discAmt>0?36:28;
+  doc.setFillColor(...hex('#1a1610')); doc.roundedRect(M,y,CW,totH,3,3,'F');
+  doc.setDrawColor(...hex('#c9943c')); doc.roundedRect(M,y,CW,totH,3,3,'S');
+  let ty2 = y+8;
+  doc.setTextColor(...hex('#7a5815')); doc.setFontSize(7.5); doc.setFont('helvetica','normal');
+  doc.text('SUBTOTAL', M+6, ty2);
+  doc.setTextColor(...hex('#c9943c'));
+  doc.text(`R ${subtotal.toLocaleString('en-ZA')}`, W-M-4, ty2, {align:'right'});
+  ty2+=7;
+  if (discAmt>0) {
+    const dl = q.discountType==='pct'?`DISCOUNT (${q.discountValue}%)`:'DISCOUNT';
+    doc.setTextColor(...hex('#4caf7a')); doc.setFontSize(7.5);
+    doc.text(dl, M+6, ty2); doc.text(`-R ${discAmt.toLocaleString('en-ZA')}`, W-M-4, ty2, {align:'right'});
+    doc.setDrawColor(...hex('#2c2619')); doc.line(M+4,ty2+2.5,W-M-4,ty2+2.5);
+    ty2+=9;
+  }
+  doc.setTextColor(...hex('#7a5815')); doc.setFontSize(7); doc.setFont('helvetica','normal');
+  doc.text('TOTAL AMOUNT', M+6, ty2);
+  doc.setTextColor(...hex('#e8c87a')); doc.setFontSize(16); doc.setFont('helvetica','bold');
+  doc.text(`R ${total.toLocaleString('en-ZA')}`, W-M-4, ty2+6, {align:'right'});
+  doc.setTextColor(...hex('#7a5815')); doc.setFontSize(6.5); doc.setFont('helvetica','normal');
+  doc.text('VAT not registered — no VAT charged', M+6, ty2+6);
+  y+=totH+8;
+
+  // PAYMENT TERMS
+  const hasDeposit = q.deposit?.trim(), hasTerms = q.terms?.trim();
+  if (hasDeposit || hasTerms || !isInvoice) {
+    checkPg(20);
+    doc.setFillColor(...hex('#111108')); doc.rect(M,y,CW,8,'F');
+    doc.setDrawColor(...hex('#3A6B4F')); doc.rect(M,y,3,8,'F');
+    doc.setTextColor(255,255,255); doc.setFontSize(7.5); doc.setFont('helvetica','bold');
+    doc.text('PAYMENT TERMS', M+6, y+5.5); y+=10;
+    let termsArr=[];
+    if (hasDeposit) termsArr.push(`Deposit: ${q.deposit.trim()}`);
+    if (hasTerms) termsArr.push(q.terms.trim());
+    if (!termsArr.length && !isInvoice) termsArr=['This quotation is valid for 30 days.','A deposit is required to confirm the booking.'];
+    if (q.validUntil) termsArr.push(`Valid until: ${new Date(q.validUntil).toLocaleDateString('en-ZA')}`);
+    const tLines = doc.splitTextToSize(termsArr.join('\n'), CW-8);
+    const tH = tLines.length*5+6;
+    doc.setFillColor(255,255,255); doc.rect(M,y,CW,tH,'F');
+    doc.setDrawColor(220,220,215); doc.rect(M,y,CW,tH,'S');
+    doc.setTextColor(40,40,40); doc.setFontSize(8.5); doc.setFont('helvetica','normal');
+    doc.text(tLines, M+4, y+5); y+=tH+6;
+  }
+
+  // BANKING DETAILS
+  checkPg(36);
+  doc.setFillColor(...hex('#111108')); doc.rect(M,y,CW,8,'F');
+  doc.setDrawColor(...hex('#3A6B4F')); doc.rect(M,y,3,8,'F');
+  doc.setTextColor(255,255,255); doc.setFontSize(7.5); doc.setFont('helvetica','bold');
+  doc.text('EFT BANKING DETAILS', M+6, y+5.5); y+=10;
+  doc.setFillColor(...hex('#0d1a12')); doc.roundedRect(M,y,CW,28,3,3,'F');
+  doc.setDrawColor(...hex('#2d6b45')); doc.roundedRect(M,y,CW,28,3,3,'S');
+  const colA=M+6, colB=M+60;
+  let by=y+7;
+  [['Account Holder','Monique Deetlefs'],['Bank','ABSA'],['Account Number','9347485805'],['Branch Code','632005']].forEach(([lbl,val])=>{
+    doc.setTextColor(...hex('#7a5815')); doc.setFontSize(6.5); doc.setFont('helvetica','normal');
+    doc.text(lbl,colA,by);
+    doc.setTextColor(...hex('#e8c87a')); doc.setFontSize(8.5); doc.setFont('helvetica','bold');
+    doc.text(val,colB,by);
+    by+=6.5;
+  });
+  doc.setTextColor(...hex('#4caf7a')); doc.setFontSize(6.5); doc.setFont('helvetica','italic');
+  doc.text(`Reference: "${client.name} – ${job.ref||''}"`, colA, by);
+  y+=36;
+
+  // FOOTER
+  const pages = doc.internal.getNumberOfPages();
+  for (let pg=1;pg<=pages;pg++) {
+    doc.setPage(pg);
+    doc.setFillColor(...hex('#0a0906')); doc.rect(0,283,W,14,'F');
+    doc.setTextColor(...hex('#7a5815')); doc.setFontSize(6.5); doc.setFont('helvetica','normal');
+    doc.text('✦ Elysium Works · KZN South Coast · 071 818 1132 · elysiumweb@proton.me', M, 290);
+    doc.text(`${pg}/${pages}`, W-M, 290, {align:'right'});
+  }
+
+  const docType = isInvoice ? 'Invoice' : 'Quote';
+  const fname = `EW_${docType}_${client.name.replace(/\s+/g,'_')}_${job.ref||'job'}.pdf`;
+  doc.save(fname);
+  showToast(`${docType} PDF generated`, 'success');
+
+  if (!isInvoice && currentJob.status === 'enquiry') await setJobStatus('quoted');
+  if (isInvoice && currentJob.status === 'done')     await setJobStatus('invoiced');
 }
 
 function openEditClientModal() {
@@ -3384,7 +4889,24 @@ function renderClientDetail(client) {
   const calloutFee = parseFloat(q.callout) || 50;
 
   // Source + dates
+  // Load job count async for the badge
+  dbGetClientJobs(client.id).then(jobs => {
+    const badge = document.getElementById('client-job-badge');
+    if (badge) badge.textContent = jobs.length > 0 ? `${jobs.length} job${jobs.length>1?'s':''}` : 'No jobs yet';
+  });
+
   let html = `
+  <!-- JOB HISTORY QUICK ACCESS -->
+  <div style="background:var(--md-gold-dk);border-radius:var(--md-radius-lg);padding:.9rem 1rem;margin-bottom:1rem;display:flex;align-items:center;gap:.75rem;cursor:pointer" onclick="switchDetailTab('jobs')">
+    <div style="font-size:1.2rem">📋</div>
+    <div style="flex:1">
+      <div style="font-family:'Syne',sans-serif;font-size:.88rem;font-weight:600;color:var(--md-black)">Job History</div>
+      <div id="client-job-badge" style="font-size:.72rem;color:rgba(0,0,0,.65);margin-top:.1rem">Loading...</div>
+    </div>
+    <button onclick="event.stopPropagation();openNewJobModal()" style="background:rgba(0,0,0,.2);border:1px solid rgba(0,0,0,.3);border-radius:var(--md-radius);font-family:'Cinzel',serif;font-size:.68rem;color:var(--md-black);font-weight:600;padding:.4rem .75rem;cursor:pointer;white-space:nowrap">+ New Job</button>
+    <div style="color:rgba(0,0,0,.5);font-size:1rem">›</div>
+  </div>
+
   <div class="section-eyebrow" style="margin-bottom:.75rem">Client Info</div>
   <div style="background:var(--md-surface);border:1px solid var(--md-border);border-radius:var(--md-radius-lg);padding:1rem;margin-bottom:1rem">
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
@@ -3496,30 +5018,10 @@ function renderClientDetail(client) {
 
   <div class="ornament-divider"></div>
 
-  <!-- NOTES / HISTORY -->
-  <div class="section-eyebrow">Job Notes & History</div>
-  <button class="btn-secondary" style="margin-bottom:.75rem" onclick="openModal('addNoteModal')">+ Add note</button>
-  <div id="notesList">
-    ${(client.notes||[]).slice().reverse().map(n => `
-      <div class="history-entry">
-        <div class="history-date">${new Date(n.date).toLocaleString('en-ZA',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</div>
-        <div class="history-text">${n.text}</div>
-      </div>`).join('') || '<div style="color:var(--md-muted);font-size:.82rem;padding:.5rem 0">No notes yet</div>'}
+  <div style="display:flex;gap:.6rem">
+    <button class="btn-secondary" style="flex:1" onclick="switchDetailTab('notes')">📝 Notes & Photos</button>
+    <button class="btn-danger" style="flex:0 0 auto;width:auto;padding:.8rem 1rem" onclick="confirmDeleteClient('${client.id}')">🗑️</button>
   </div>
-
-  <div class="ornament-divider"></div>
-
-  <!-- PHOTOS -->
-  <div class="section-eyebrow">Job Photos</div>
-  <div class="photo-grid" id="crmPhotoGrid">
-    ${(client.photos||[]).map(p => `<img class="photo-thumb" src="${p}" onclick="viewPhoto(this.src)"/>`).join('')}
-    <div class="photo-placeholder" onclick="triggerCRMPhoto()">📷</div>
-  </div>
-
-  <div style="height:1.5rem"></div>
-
-  <!-- Danger zone -->
-  <button class="btn-danger" onclick="confirmDeleteClient('${client.id}')">Delete client</button>
   <div style="height:2rem"></div>
   `;
 
