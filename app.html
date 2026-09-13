@@ -4976,9 +4976,13 @@ async function saveEditClient() {
   document.getElementById('det-name').textContent   = name;
   document.getElementById('det-phone').textContent  = phone || 'No phone';
 
-  renderClientDetail(currentClient);
   closeModal('editClientModal');
   showToast('Client updated', 'success');
+
+  // Refresh whichever tab is active
+  if (currentDetailTab === 'current') await renderCurrentJob(currentClient);
+  else if (currentDetailTab === 'jobs') await renderJobHistory(currentClient);
+  else if (currentDetailTab === 'notes') renderClientNotesPhotos(currentClient);
 }
 
 function renderStageStepper(activeStage) {
@@ -5218,7 +5222,8 @@ function removeLine(type, idx) {
   if (!currentClient.quote) return;
   currentClient.quote[type].splice(idx, 1);
   autosaveClient();
-  renderClientDetail(currentClient); // re-render to reindex
+  // re-render whichever tab is active
+  if (currentDetailTab === 'current') renderCurrentJob(currentClient);
 }
 
 function updateQuoteField(field, val) {
@@ -5271,20 +5276,6 @@ function autosaveClient() {
     await dbPutClient(currentClient);
     pushClients().catch(() => {}); // background push
   }, 800);
-}
-
-// ── NOTES ──
-async function saveNote() {
-  const text = document.getElementById('note-text').value.trim();
-  if (!text || !currentClient) return;
-  if (!currentClient.notes) currentClient.notes = [];
-  currentClient.notes.push({ date: Date.now(), text });
-  currentClient.updated_at = Date.now();
-  await dbPutClient(currentClient);
-  closeModal('addNoteModal');
-  document.getElementById('note-text').value = '';
-  showToast('Note saved', 'success');
-  renderClientDetail(currentClient);
 }
 
 // ── WHATSAPP ──
@@ -5661,43 +5652,61 @@ async function boot() {
 // clients have quote data — safe to run repeatedly.
 async function migrateOldQuotesToJobs() {
   try {
-    const existingJobs = await dbGetAllJobs();
-    if (existingJobs.length > 0) return; // already migrated
-
     const clients = await dbGetAllClients();
     if (!clients.length) return;
 
+    // Check which clients already have a migrated job (by client_id)
+    const existingJobs = await dbGetAllJobs();
+    const migratedClientIds = new Set(existingJobs.map(j => j.client_id));
+
     let migrated = 0;
     for (const client of clients) {
-      const q = client.quote;
-      // Skip if no meaningful quote data
-      const hasScope   = q?.scope?.trim();
-      const hasLabour  = (q?.labour||[]).some(l => l.desc || l.amount);
-      const hasParts   = (q?.parts||[]).some(l => l.desc || l.amount);
-      const hasCallout = parseFloat(q?.callout) > 0;
+      // Skip if this client already has a job in the jobs store
+      if (migratedClientIds.has(client.id)) continue;
 
-      if (!hasScope && !hasLabour && !hasParts) continue;
+      const q = client.quote || {};
+      const hasScope   = q.scope?.trim();
+      const hasLabour  = (q.labour||[]).some(l => l.desc || l.amount);
+      const hasParts   = (q.parts||[]).some(l => l.desc || l.amount);
+      const hasPhotos  = (client.photos||[]).length > 0;
+      const hasNotes   = (client.notes||[]).length > 0;
 
-      // Determine job type from stage / job_type field
-      const typeMap = {
-        'Appliance repair': 'appliance',
-        'Appliance Repair': 'appliance',
-        'Home inspection': 'inspection',
-        'Home Inspection': 'inspection',
-        'Fencing': 'quote',
-        'Patio': 'patio',
-      };
-      const type = typeMap[client.job_type] || 'quote';
-      const typeCode = type === 'inspection' ? 'I' : type === 'appliance' ? 'A' : 'Q';
+      // Skip truly empty clients (no quote, no photos, no notes)
+      if (!hasScope && !hasLabour && !hasParts && !hasPhotos && !hasNotes) continue;
+
+      // Detect job type — check job_type field case-insensitively
+      const jt = (client.job_type || '').toLowerCase();
+      let type = 'quote';
+      if (jt.includes('appliance') || jt.includes('repair') || jt.includes('toaster') ||
+          jt.includes('wash') || jt.includes('micro') || jt.includes('tumble')) {
+        type = 'appliance';
+      } else if (jt.includes('inspect')) {
+        type = 'inspection';
+      } else if (jt.includes('patio') || jt.includes('enclos')) {
+        type = 'patio';
+      } else if (jt.includes('handyman') || jt.includes('general')) {
+        type = 'handyman';
+      }
+      const typeCode = { inspection:'I', appliance:'A', handyman:'H' }[type] || 'Q';
       const ref = await nextJobNumber(typeCode);
 
-      // Convert old labour/parts lines to new line items format
-      const labourLines = (q?.labour||[])
+      // Convert old labour/parts to new line items
+      const labourLines = (q.labour||[])
         .filter(l => l.desc || l.amount)
         .map(l => ({ description: l.desc || 'Labour', qty: 1, unit: 'hrs', unit_price: parseFloat(l.amount)||0 }));
-      const partsLines = (q?.parts||[])
+      const partsLines = (q.parts||[])
         .filter(l => l.desc || l.amount)
-        .map(l => ({ description: l.desc || 'Part/Material', qty: 1, unit: 'each', unit_price: parseFloat(l.amount)||0 }));
+        .map(l => ({ description: l.desc || 'Part / Material', qty: 1, unit: 'each', unit_price: parseFloat(l.amount)||0 }));
+
+      // Build description: prefer scope, fall back to job_type, then name
+      const description = hasScope
+        ? q.scope.trim().slice(0, 80)
+        : (client.job_type || `${client.name} — job`);
+
+      // Carry photos across as annotatedPhotos
+      const annotatedPhotos = (client.photos||[]).map(src => ({
+        original: src, annotated: src, label: ''
+      }));
 
       const job = {
         id: uid(),
@@ -5705,34 +5714,35 @@ async function migrateOldQuotesToJobs() {
         client_name: client.name,
         type,
         ref,
-        description: hasScope ? q.scope.trim().slice(0, 80) : (client.job_type || 'Job'),
+        description,
         address: client.area || '',
         visit_date: client.created_at || Date.now(),
         status: client.stage || 'enquiry',
         quote: {
-          callout: parseFloat(q?.callout) || 50,
+          callout: parseFloat(q.callout) || 50,
           lines: [...labourLines, ...partsLines],
-          discountType: q?.discountType || '',
-          discountValue: q?.discountValue || '',
-          deposit: q?.deposit || '',
-          terms: q?.terms || '',
-          scope: q?.scope || '',
-          validUntil: q?.validUntil || '',
+          discountType:  q.discountType  || '',
+          discountValue: q.discountValue || '',
+          deposit:       q.deposit       || '',
+          terms:         q.terms         || '',
+          scope:         q.scope         || '',
+          validUntil:    q.validUntil    || '',
         },
         sketch: null,
-        annotatedPhotos: [],
+        annotatedPhotos,
         measurements: [],
-        notes: (client.notes || []),  // carry notes across
+        notes: (client.notes || []),
         created_at: client.created_at || Date.now(),
         updated_at: Date.now(),
       };
 
       await dbPutJob(job);
       migrated++;
+      console.log(`[EW] Migrated: ${client.name} → ${ref} (${type}, status: ${job.status})`);
     }
 
     if (migrated > 0) {
-      console.log(`[EW] Migrated ${migrated} client quote(s) to jobs store`);
+      console.log(`[EW] Migration complete — ${migrated} job(s) created`);
     }
   } catch (e) {
     console.warn('[EW] Migration error:', e);
