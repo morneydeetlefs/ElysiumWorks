@@ -3038,7 +3038,7 @@ async function generatePDF() {
   doc.setTextColor(...hexToRGB('#7a5815'));
   doc.setFontSize(7);
   doc.setFont('helvetica', 'normal');
-  doc.text('✦ ELYSIUM WORKS', MARGIN, 14);
+  doc.text('ELYSIUM WORKS', MARGIN, 14);
 
   doc.setTextColor(...hexToRGB('#e8c87a'));
   doc.setFontSize(22);
@@ -3239,7 +3239,7 @@ async function generatePDF() {
     doc.setTextColor(...hexToRGB('#7a5815'));
     doc.setFontSize(6.5);
     doc.setFont('helvetica', 'normal');
-    doc.text('✦ Elysium Works · KZN South Coast · 071 818 1132 · elysiumweb@proton.me', MARGIN, 290);
+    doc.text('Elysium Works · KZN South Coast · 071 818 1132 · elysiumweb@proton.me', MARGIN, 290);
     doc.text(`Page ${pg} of ${pageCount}`, PAGE_W - MARGIN, 290, { align: 'right' });
   }
 
@@ -4721,7 +4721,7 @@ async function generateJobPDF(isInvoice) {
   doc.setFillColor(...hex('#0a0906')); doc.rect(0,0,W,55,'F');
   doc.setFillColor(...hex('#110e09')); doc.rect(0,0,8,297,'F');
   doc.setTextColor(...hex('#7a5815')); doc.setFontSize(7); doc.setFont('helvetica','normal');
-  doc.text('✦ ELYSIUM WORKS', M, 12);
+  doc.text('* ELYSIUM WORKS', M, 12);
   doc.setTextColor(...hex('#e8c87a')); doc.setFontSize(20); doc.setFont('helvetica','bold');
   doc.text(isInvoice ? 'INVOICE' : 'QUOTATION', M, 26);
   doc.setTextColor(...hex('#7a5815')); doc.setFontSize(7.5); doc.setFont('helvetica','normal');
@@ -4927,7 +4927,7 @@ async function generateJobPDF(isInvoice) {
     doc.setPage(pg);
     doc.setFillColor(...hex('#0a0906')); doc.rect(0,283,W,14,'F');
     doc.setTextColor(...hex('#7a5815')); doc.setFontSize(6.5); doc.setFont('helvetica','normal');
-    doc.text('✦ Elysium Works · KZN South Coast · 071 818 1132 · elysiumweb@proton.me', M, 290);
+    doc.text('Elysium Works · KZN South Coast · 071 818 1132 · elysiumweb@proton.me', M, 290);
     doc.text(`${pg}/${pages}`, W-M, 290, {align:'right'});
   }
 
@@ -5538,7 +5538,7 @@ async function generateQuotePDF(isInvoice) {
     doc.setPage(p);
     doc.setFillColor(...hex('#0a0906')); doc.rect(0,283,W,14,'F');
     doc.setTextColor(...hex('#7a5815')); doc.setFontSize(6.5); doc.setFont('helvetica','normal');
-    doc.text('✦ Elysium Works · KZN South Coast · 071 818 1132 · elysiumweb@proton.me', M, 290);
+    doc.text('Elysium Works · KZN South Coast · 071 818 1132 · elysiumweb@proton.me', M, 290);
     doc.text(`${p}/${pages}`, W-M, 290, {align:'right'});
   }
 

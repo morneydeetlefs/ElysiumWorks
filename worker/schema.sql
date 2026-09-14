@@ -50,7 +50,7 @@ CREATE TABLE IF NOT EXISTS jobs (
   client_id    TEXT NOT NULL REFERENCES clients_crm(id) ON DELETE CASCADE,
   client_name  TEXT,                    -- denormalised for fast display
   type         TEXT NOT NULL,           -- quote | appliance | handyman | inspection | patio | other
-  ref          TEXT UNIQUE,             -- e.g. EW-Q-26-001
+  ref          TEXT,             -- e.g. EW-Q-26-001
   description  TEXT,
   address      TEXT,
   visit_date   DATETIME,

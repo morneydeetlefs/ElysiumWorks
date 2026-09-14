@@ -305,48 +305,70 @@ export default {
       const body = await request.json().catch(() => null);
       if (!body || !Array.isArray(body.jobs)) return err('Expected { jobs: [] }', 400, origin);
 
+      let synced = 0;
+      const errors = [];
+
       for (const j of body.jobs) {
         if (!j.id || !j.client_id) continue;
-        const existing = await dbFirst(env.DB, `SELECT updated_at FROM jobs WHERE id = ?`, [j.id]);
-        if (!existing || j.updated_at > (existing.updated_at || 0)) {
-          // Upsert job record
-          await dbRun(env.DB, `
-            INSERT INTO jobs (id, client_id, client_name, type, ref, description, address,
-              visit_date, status, data, updated_at, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ON CONFLICT(id) DO UPDATE SET
-              status     = excluded.status,
-              description= excluded.description,
-              data       = excluded.data,
-              updated_at = excluded.updated_at
-          `, [
-            j.id, j.client_id, j.client_name||'', j.type||'other',
-            j.ref||null, j.description||'', j.address||'',
-            j.visit_date ? new Date(j.visit_date).toISOString() : null,
-            j.status||'enquiry',
-            // Strip annotated photos from blob to keep D1 payload lean;
-            // originals stay in IndexedDB / B2
-            JSON.stringify({ ...j, annotatedPhotos: (j.annotatedPhotos||[]).map(p => ({ label: p.label, annotated: '[photo]', original: '[photo]' })), sketch: j.sketch ? '[sketch]' : null }),
-            j.updated_at || Date.now(),
-            j.created_at ? new Date(j.created_at).toISOString() : new Date().toISOString(),
-          ]);
+        try {
+          const existing = await dbFirst(env.DB, `SELECT updated_at FROM jobs WHERE id = ?`, [j.id]);
+          if (!existing || j.updated_at > (existing.updated_at || 0)) {
+            // Build a lean data blob — no base64
+            const leanData = JSON.stringify({
+              type: j.type,
+              ref: j.ref,
+              description: j.description,
+              address: j.address,
+              status: j.status,
+              quote: j.quote || {},
+              measurements: j.measurements || [],
+              notes: (j.notes || []).slice(-20), // cap at last 20 notes
+            });
 
-          // Upsert normalised line items for reporting
-          await dbRun(env.DB, `DELETE FROM quote_line_items WHERE job_id = ?`, [j.id]);
-          const lines = j.quote?.lines || [];
-          for (const l of lines) {
-            if (!l.description) continue;
-            const qty   = parseFloat(l.qty)        || 1;
-            const price = parseFloat(l.unit_price) || 0;
-            await dbRun(env.DB,
-              `INSERT INTO quote_line_items (id, job_id, description, qty, unit, unit_price, line_total)
-               VALUES (?, ?, ?, ?, ?, ?, ?)`,
-              [crypto.randomUUID(), j.id, l.description, qty, l.unit||'each', price, qty*price]
-            );
+            await dbRun(env.DB, `
+              INSERT INTO jobs (id, client_id, client_name, type, ref, description, address,
+                visit_date, status, data, updated_at, created_at)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+              ON CONFLICT(id) DO UPDATE SET
+                status      = excluded.status,
+                description = excluded.description,
+                data        = excluded.data,
+                updated_at  = excluded.updated_at
+            `, [
+              j.id,
+              j.client_id,
+              j.client_name || '',
+              j.type || 'other',
+              j.ref || null,
+              j.description || '',
+              j.address || '',
+              j.visit_date ? new Date(j.visit_date).toISOString() : null,
+              j.status || 'enquiry',
+              leanData,
+              j.updated_at || Date.now(),
+              j.created_at ? new Date(j.created_at).toISOString() : new Date().toISOString(),
+            ]);
+
+            // Upsert normalised line items for reporting
+            await dbRun(env.DB, `DELETE FROM quote_line_items WHERE job_id = ?`, [j.id]);
+            const lines = j.quote?.lines || [];
+            for (const l of lines) {
+              if (!l.description) continue;
+              const qty   = parseFloat(l.qty)        || 1;
+              const price = parseFloat(l.unit_price) || 0;
+              await dbRun(env.DB,
+                `INSERT INTO quote_line_items (id, job_id, description, qty, unit, unit_price, line_total)
+                 VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                [crypto.randomUUID(), j.id, l.description, qty, l.unit || 'each', price, qty * price]
+              );
+            }
+            synced++;
           }
+        } catch (jobErr) {
+          errors.push({ id: j.id, error: jobErr.message });
         }
       }
-      return json({ ok: true, count: body.jobs.length }, 200, origin);
+      return json({ ok: true, synced, total: body.jobs.length, errors }, 200, origin);
     }
 
     // ── GET /api/jobs/sync ──────────────────────────────────
