@@ -1554,7 +1554,7 @@ body::before {
 
       <div style="text-align:center;margin-top:2rem;padding-bottom:1rem">
         <div style="font-family:'Cinzel',serif;font-size:.72rem;letter-spacing:.2em;color:var(--md-gold-dk)">✦ ELYSIUM WORKS ✦</div>
-        <div style="font-family:'Syne Mono',monospace;font-size:.58rem;letter-spacing:.15em;color:var(--md-muted);margin-top:.3rem">KZN SOUTH COAST · SOUTH AFRICA</div>
+        <div style="font-family:'Syne Mono',monospace;font-size:.58rem;letter-spacing:.15em;color:var(--md-muted);margin-top:.3rem">KZN SOUTH COAST - SOUTH AFRICA</div>
       </div>
     </div>
     <nav class="bottom-nav">
@@ -3022,7 +3022,7 @@ async function generatePDF() {
       doc.setTextColor(...hexToRGB('#7a5815'));
       doc.setFontSize(7);
       doc.setFont('helvetica', 'normal');
-      doc.text('ELYSIUM WORKS · INSPECTION REPORT', MARGIN, 8);
+      doc.text('ELYSIUM WORKS - INSPECTION REPORT', MARGIN, 8);
       doc.text(project.property_address, PAGE_W - MARGIN, 8, { align: 'right' });
     }
   }
@@ -3049,7 +3049,7 @@ async function generatePDF() {
   doc.setTextColor(...hexToRGB('#7a5815'));
   doc.setFontSize(8);
   doc.setFont('helvetica', 'normal');
-  doc.text('KZN SOUTH COAST · SOUTH AFRICA', MARGIN, 47);
+  doc.text('KZN SOUTH COAST - SOUTH AFRICA', MARGIN, 47);
 
   // Date top right
   const inspDate = project.inspection_date ? new Date(project.inspection_date).toLocaleDateString('en-ZA', { day:'numeric', month:'long', year:'numeric' }) : '';
@@ -3072,7 +3072,7 @@ async function generatePDF() {
   doc.setTextColor(...hexToRGB('#f0e6ce'));
   doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
-  doc.text(project.property_address || '—', MARGIN + 6, y + 17);
+  doc.text(project.property_address || '-', MARGIN + 6, y + 17);
 
   const halfW = CONTENT_W / 2;
   doc.setTextColor(...hexToRGB('#7a5815'));
@@ -3083,8 +3083,8 @@ async function generatePDF() {
   doc.setTextColor(...hexToRGB('#f0e6ce'));
   doc.setFontSize(9);
   doc.setFont('helvetica', 'bold');
-  doc.text(project.client_name || '—', MARGIN + 6, y + 32);
-  doc.text(project.client_phone || '—', MARGIN + halfW, y + 32);
+  doc.text(project.client_name || '-', MARGIN + 6, y + 32);
+  doc.text(project.client_phone || '-', MARGIN + halfW, y + 32);
 
   y += 44;
 
@@ -3239,7 +3239,7 @@ async function generatePDF() {
     doc.setTextColor(...hexToRGB('#7a5815'));
     doc.setFontSize(6.5);
     doc.setFont('helvetica', 'normal');
-    doc.text('Elysium Works · KZN South Coast · 071 818 1132 · elysiumweb@proton.me', MARGIN, 290);
+    doc.text('Elysium Works - KZN South Coast - 071 818 1132 - elysiumweb@proton.me', MARGIN, 290);
     doc.text(`Page ${pg} of ${pageCount}`, PAGE_W - MARGIN, 290, { align: 'right' });
   }
 
@@ -3515,7 +3515,7 @@ async function loadCRMClients() {
       <div style="display:flex;align-items:flex-start;gap:.5rem">
         <div style="flex:1">
           <div class="client-name">${c.name}</div>
-          <div class="client-job">${c.job_type || '—'}</div>
+          <div class="client-job">${c.job_type || '-'}</div>
         </div>
         <span id="jcnt-${c.id}" style="font-family:'Syne Mono',monospace;font-size:.55rem;letter-spacing:.1em;background:var(--md-panel);border:1px solid var(--md-border);border-radius:10px;padding:.15rem .45rem;color:var(--md-muted);flex-shrink:0"></span>
       </div>
@@ -3649,11 +3649,11 @@ async function renderCurrentJob(client) {
       <div style="background:var(--md-surface);border:1px solid var(--md-border);border-radius:var(--md-radius-lg);padding:1rem;margin-bottom:1rem">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
           <div><div style="font-family:'Syne Mono',monospace;font-size:.58rem;letter-spacing:.15em;color:var(--md-gold-dk);margin-bottom:.3rem">AREA</div>
-            <div style="font-size:.85rem;color:var(--md-cream)">${client.area||'—'}</div></div>
+            <div style="font-size:.85rem;color:var(--md-cream)">${client.area||'-'}</div></div>
           <div><div style="font-family:'Syne Mono',monospace;font-size:.58rem;letter-spacing:.15em;color:var(--md-gold-dk);margin-bottom:.3rem">SOURCE</div>
-            <div style="font-size:.85rem;color:var(--md-cream)">${client.source||'—'}</div></div>
+            <div style="font-size:.85rem;color:var(--md-cream)">${client.source||'-'}</div></div>
           <div><div style="font-family:'Syne Mono',monospace;font-size:.58rem;letter-spacing:.15em;color:var(--md-gold-dk);margin-bottom:.3rem">JOB TYPE</div>
-            <div style="font-size:.85rem;color:var(--md-cream)">${client.job_type||'—'}</div></div>
+            <div style="font-size:.85rem;color:var(--md-cream)">${client.job_type||'-'}</div></div>
           <div><div style="font-family:'Syne Mono',monospace;font-size:.58rem;letter-spacing:.15em;color:var(--md-gold-dk);margin-bottom:.3rem">ADDED</div>
             <div style="font-size:.85rem;color:var(--md-cream)">${new Date(client.created_at).toLocaleDateString('en-ZA')}</div></div>
         </div>
@@ -3676,7 +3676,7 @@ async function renderCurrentJob(client) {
     <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.75rem">
       <div style="flex:1">
         <div style="font-family:'Syne Mono',monospace;font-size:.58rem;letter-spacing:.2em;color:var(--md-gold-dk)">MOST RECENT JOB</div>
-        <div style="font-family:'Syne',sans-serif;font-size:.9rem;font-weight:600;color:var(--md-cream);margin-top:.2rem">${latest.description||'—'}</div>
+        <div style="font-family:'Syne',sans-serif;font-size:.9rem;font-weight:600;color:var(--md-cream);margin-top:.2rem">${latest.description||'-'}</div>
         <div style="font-family:'Syne Mono',monospace;font-size:.6rem;color:var(--md-gold-dk);margin-top:.15rem">${latest.ref||''}</div>
       </div>
       <button onclick="openJobDetail('${latest.id}')" style="background:var(--md-surface);border:1px solid var(--md-border-lt);border-radius:var(--md-radius);color:var(--md-gold);font-family:'Syne Mono',monospace;font-size:.62rem;letter-spacing:.1em;padding:.5rem .75rem;cursor:pointer;white-space:nowrap">Open Job ›</button>
@@ -3788,7 +3788,7 @@ function jobCardHTML(j) {
   const typeLabel = { quote:'Construction Quote', appliance:'Appliance Repair', handyman:'Handyman', inspection:'Inspection', patio:'Patio / Enclosure', other:'Other' }[j.type] || j.type;
   return `<div class="job-card" onclick="openJobDetail('${j.id}')">
     <div class="job-ref">${j.ref || ''} · ${typeLabel}</div>
-    <div class="job-desc">${j.description || '—'}</div>
+    <div class="job-desc">${j.description || '-'}</div>
     <div class="job-address">${j.address || ''}</div>
     <div class="job-meta">
       <span class="stage-pill ${stage.cls}">${stage.icon} ${stage.label}</span>
@@ -3914,11 +3914,11 @@ function renderJobDetail(job) {
   <div style="background:var(--md-surface);border:1px solid var(--md-border);border-radius:var(--md-radius-lg);padding:1rem;margin-bottom:1rem">
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
       <div><div style="font-family:'Syne Mono',monospace;font-size:.58rem;letter-spacing:.15em;color:var(--md-gold-dk);margin-bottom:.3rem">REF</div>
-        <div style="font-size:.85rem;color:var(--md-gold-lt);font-family:'Syne Mono',monospace">${job.ref || '—'}</div></div>
+        <div style="font-size:.85rem;color:var(--md-gold-lt);font-family:'Syne Mono',monospace">${job.ref || '-'}</div></div>
       <div><div style="font-family:'Syne Mono',monospace;font-size:.58rem;letter-spacing:.15em;color:var(--md-gold-dk);margin-bottom:.3rem">TYPE</div>
-        <div style="font-size:.85rem;color:var(--md-cream)">${job.type || '—'}</div></div>
+        <div style="font-size:.85rem;color:var(--md-cream)">${job.type || '-'}</div></div>
       <div><div style="font-family:'Syne Mono',monospace;font-size:.58rem;letter-spacing:.15em;color:var(--md-gold-dk);margin-bottom:.3rem">ADDRESS</div>
-        <div style="font-size:.85rem;color:var(--md-cream)">${job.address || '—'}</div></div>
+        <div style="font-size:.85rem;color:var(--md-cream)">${job.address || '-'}</div></div>
       <div><div style="font-family:'Syne Mono',monospace;font-size:.58rem;letter-spacing:.15em;color:var(--md-gold-dk);margin-bottom:.3rem">VISIT DATE</div>
         <div style="font-size:.85rem;color:var(--md-cream)">${job.visit_date ? new Date(job.visit_date).toLocaleDateString('en-ZA') : '—'}</div></div>
     </div>
@@ -3976,7 +3976,7 @@ function renderJobDetail(job) {
   <div class="quote-section">
     <div class="quote-section-title">Callout / Site Visit Fee</div>
     <div class="line-item">
-      <input class="line-desc" type="text" value="Site visit — ${job.address||'—'}" readonly style="opacity:.7"/>
+      <input class="line-desc" type="text" value="Site visit — ${job.address||'-'}" readonly style="opacity:.7"/>
       <input class="line-amount" type="number" inputmode="decimal" id="jq-callout" value="${parseFloat(q.callout)||50}"
         onchange="updateJobCallout(this.value)" oninput="updateJobCallout(this.value)"/>
     </div>
@@ -4191,7 +4191,7 @@ function updateJobQuoteTotals() {
     <div class="total-line"><span class="tl-label">Subtotal</span><span class="tl-val">R ${subtotal.toLocaleString('en-ZA')}</span></div>
     ${discAmt > 0 ? `<div class="total-line"><span class="tl-label" style="color:var(--md-success)">${discLabel}</span><span class="tl-val" style="color:var(--md-success)">-R ${discAmt.toLocaleString('en-ZA')}</span></div>` : ''}
     <div class="total-line grand"><span class="tl-label">Total</span><span class="tl-val">R ${total.toLocaleString('en-ZA')}</span></div>
-    <div style="font-size:.68rem;color:var(--md-muted);margin-top:.4rem">VAT not registered — no VAT charged</div>`;
+    <div style="font-size:.68rem;color:var(--md-muted);margin-top:.4rem">VAT not registered - no VAT charged</div>`;
 }
 
 async function setJobStatus(stageId) {
@@ -4284,7 +4284,7 @@ function sendJobWhatsApp() {
   if (q.scope?.trim()) msg += `\n_${q.scope.trim()}_\n`;
   msg += `\n*Quote Total: R${total.toLocaleString('en-ZA')}*\n`;
   if (q.deposit) msg += `Deposit: ${q.deposit}\n`;
-  msg += `\n_Valid 30 days · Elysium Works · 071 818 1132_`;
+  msg += `\n_Valid 30 days · Elysium Works - 071 818 1132_`;
 
   const clean = (currentClient.phone||'').replace(/\D/g,'');
   const num = clean.startsWith('0') ? '27' + clean.slice(1) : clean;
@@ -4712,7 +4712,7 @@ async function generateJobPDF(isInvoice) {
       doc.addPage(); y=20;
       doc.setFillColor(...hex('#0a0906')); doc.rect(0,0,W,12,'F');
       doc.setTextColor(...hex('#7a5815')); doc.setFontSize(7); doc.setFont('helvetica','normal');
-      doc.text(`ELYSIUM WORKS · ${isInvoice?'INVOICE':'QUOTE'} ${job.ref||''}`, M, 8);
+      doc.text(`ELYSIUM WORKS - ${isInvoice?'INVOICE':'QUOTE'} ${job.ref||''}`, M, 8);
       doc.text(client.name, W-M, 8, {align:'right'});
     }
   }
@@ -4725,7 +4725,7 @@ async function generateJobPDF(isInvoice) {
   doc.setTextColor(...hex('#e8c87a')); doc.setFontSize(20); doc.setFont('helvetica','bold');
   doc.text(isInvoice ? 'INVOICE' : 'QUOTATION', M, 26);
   doc.setTextColor(...hex('#7a5815')); doc.setFontSize(7.5); doc.setFont('helvetica','normal');
-  doc.text('KZN SOUTH COAST · SOUTH AFRICA', M, 34);
+  doc.text('KZN SOUTH COAST - SOUTH AFRICA', M, 34);
 
   const docDate = new Date().toLocaleDateString('en-ZA',{day:'numeric',month:'long',year:'numeric'});
   doc.setTextColor(...hex('#c9943c')); doc.setFontSize(9); doc.setFont('helvetica','normal');
@@ -4744,12 +4744,12 @@ async function generateJobPDF(isInvoice) {
   doc.setTextColor(...hex('#7a5815')); doc.setFontSize(6.5); doc.setFont('helvetica','normal');
   doc.text('CLIENT', M+6, y+9); doc.text('PHONE', M+halfCW, y+9);
   doc.setTextColor(...hex('#f0e6ce')); doc.setFontSize(10); doc.setFont('helvetica','bold');
-  doc.text(client.name||'—', M+6, y+17); doc.text(client.phone||'—', M+halfCW, y+17);
+  doc.text(client.name||'-', M+6, y+17); doc.text(client.phone||'-', M+halfCW, y+17);
   doc.setTextColor(...hex('#7a5815')); doc.setFontSize(6.5); doc.setFont('helvetica','normal');
   doc.text('SITE ADDRESS', M+6, y+25); doc.text('JOB TYPE', M+halfCW, y+25);
   doc.setTextColor(...hex('#f0e6ce')); doc.setFontSize(9); doc.setFont('helvetica','bold');
-  doc.text(job.address||'—', M+6, y+33);
-  doc.text(job.type||'—', M+halfCW, y+33);
+  doc.text(job.address||'-', M+6, y+33);
+  doc.text(job.type||'-', M+halfCW, y+33);
   y += 46;
 
   // SCOPE
@@ -4876,7 +4876,7 @@ async function generateJobPDF(isInvoice) {
   doc.setTextColor(...hex('#e8c87a')); doc.setFontSize(16); doc.setFont('helvetica','bold');
   doc.text(`R ${total.toLocaleString('en-ZA')}`, W-M-4, ty2+6, {align:'right'});
   doc.setTextColor(...hex('#7a5815')); doc.setFontSize(6.5); doc.setFont('helvetica','normal');
-  doc.text('VAT not registered — no VAT charged', M+6, ty2+6);
+  doc.text('VAT not registered - no VAT charged', M+6, ty2+6);
   y+=totH+8;
 
   // PAYMENT TERMS
@@ -4918,7 +4918,7 @@ async function generateJobPDF(isInvoice) {
     by+=6.5;
   });
   doc.setTextColor(...hex('#4caf7a')); doc.setFontSize(6.5); doc.setFont('helvetica','italic');
-  doc.text(`Reference: "${client.name} – ${job.ref||''}"`, colA, by);
+  doc.text(`Reference: "${client.name} - ${job.ref||''}"`, colA, by);
   y+=36;
 
   // FOOTER
@@ -4927,7 +4927,7 @@ async function generateJobPDF(isInvoice) {
     doc.setPage(pg);
     doc.setFillColor(...hex('#0a0906')); doc.rect(0,283,W,14,'F');
     doc.setTextColor(...hex('#7a5815')); doc.setFontSize(6.5); doc.setFont('helvetica','normal');
-    doc.text('Elysium Works · KZN South Coast · 071 818 1132 · elysiumweb@proton.me', M, 290);
+    doc.text('Elysium Works - KZN South Coast - 071 818 1132 - elysiumweb@proton.me', M, 290);
     doc.text(`${pg}/${pages}`, W-M, 290, {align:'right'});
   }
 
@@ -5049,11 +5049,11 @@ function renderClientDetail(client) {
   <div style="background:var(--md-surface);border:1px solid var(--md-border);border-radius:var(--md-radius-lg);padding:1rem;margin-bottom:1rem">
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
       <div><div style="font-family:'Syne Mono',monospace;font-size:.58rem;letter-spacing:.15em;color:var(--md-gold-dk);margin-bottom:.3rem">AREA</div>
-        <div style="font-size:.85rem;color:var(--md-cream)">${client.area||'—'}</div></div>
+        <div style="font-size:.85rem;color:var(--md-cream)">${client.area||'-'}</div></div>
       <div><div style="font-family:'Syne Mono',monospace;font-size:.58rem;letter-spacing:.15em;color:var(--md-gold-dk);margin-bottom:.3rem">SOURCE</div>
-        <div style="font-size:.85rem;color:var(--md-cream)">${client.source||'—'}</div></div>
+        <div style="font-size:.85rem;color:var(--md-cream)">${client.source||'-'}</div></div>
       <div><div style="font-family:'Syne Mono',monospace;font-size:.58rem;letter-spacing:.15em;color:var(--md-gold-dk);margin-bottom:.3rem">JOB TYPE</div>
-        <div style="font-size:.85rem;color:var(--md-cream)">${client.job_type||'—'}</div></div>
+        <div style="font-size:.85rem;color:var(--md-cream)">${client.job_type||'-'}</div></div>
       <div><div style="font-family:'Syne Mono',monospace;font-size:.58rem;letter-spacing:.15em;color:var(--md-gold-dk);margin-bottom:.3rem">ADDED</div>
         <div style="font-size:.85rem;color:var(--md-cream)">${new Date(client.created_at).toLocaleDateString('en-ZA')}</div></div>
     </div>
@@ -5264,7 +5264,7 @@ function updateQuoteTotals() {
     <div class="total-line"><span class="tl-label">Subtotal</span><span class="tl-val">R ${subtotal.toLocaleString('en-ZA')}</span></div>
     ${discAmt > 0 ? `<div class="total-line"><span class="tl-label" style="color:var(--md-success)">${discLabel}</span><span class="tl-val" style="color:var(--md-success)">-R ${discAmt.toLocaleString('en-ZA')}</span></div>` : ''}
     <div class="total-line grand"><span class="tl-label">Total</span><span class="tl-val">R ${total.toLocaleString('en-ZA')}</span></div>
-    <div style="font-size:.68rem;color:var(--md-muted);margin-top:.4rem">VAT not registered — no VAT charged</div>`;
+    <div style="font-size:.68rem;color:var(--md-muted);margin-top:.4rem">VAT not registered - no VAT charged</div>`;
 }
 
 let clientSaveTimer = null;
@@ -5351,8 +5351,8 @@ async function generateQuotePDF(isInvoice) {
   doc.text(isInvoice ? 'INVOICE' : 'QUOTATION', M, 22);
   doc.setTextColor(...hex('#a8d4b8'));
   doc.setFontSize(8); doc.setFont('helvetica','normal');
-  doc.text('ELYSIUM WORKS · KZN SOUTH COAST', M, 30);
-  doc.text('071 818 1132 · elysiumweb@proton.me', M, 36);
+  doc.text('ELYSIUM WORKS - KZN SOUTH COAST', M, 30);
+  doc.text('071 818 1132 - elysiumweb@proton.me', M, 36);
 
   // Date + ref
   const ref = `EW-${Date.now().toString(36).toUpperCase().slice(-6)}`;
@@ -5462,7 +5462,7 @@ async function generateQuotePDF(isInvoice) {
   doc.setTextColor(...hex('#e8c87a')); doc.setFontSize(16); doc.setFont('helvetica','bold');
   doc.text(`R ${total.toLocaleString('en-ZA')}`, W-M-4, ty+6, {align:'right'});
   doc.setTextColor(...hex('#7a5815')); doc.setFontSize(6.5); doc.setFont('helvetica','normal');
-  doc.text('VAT not registered — no VAT charged', M+6, ty+6);
+  doc.text('VAT not registered - no VAT charged', M+6, ty+6);
 
   y += totalsH + 8;
 
@@ -5491,7 +5491,7 @@ async function generateQuotePDF(isInvoice) {
     // Fallback generic terms if none entered
     doc.setTextColor(...hex('#7a6d58')); doc.setFontSize(7.5); doc.setFont('helvetica','italic');
     doc.text('This quotation is valid for 30 days. A deposit is required to confirm the booking.', M, y);
-    doc.text('Parts are sourced at cost — final invoice may vary slightly if parts prices change.', M, y+6);
+    doc.text('Parts are sourced at cost - final invoice may vary slightly if parts prices change.', M, y+6);
     y += 14;
   }
 
@@ -5528,7 +5528,7 @@ async function generateQuotePDF(isInvoice) {
   });
 
   doc.setTextColor(...hex('#4caf7a')); doc.setFontSize(6.5); doc.setFont('helvetica','italic');
-  doc.text(`Please use "${client.name} – ${ref}" as payment reference.`, colA, by);
+  doc.text(`Please use "${client.name} - ${ref}" as payment reference.`, colA, by);
 
   y += bankH + 6;
 
@@ -5538,7 +5538,7 @@ async function generateQuotePDF(isInvoice) {
     doc.setPage(p);
     doc.setFillColor(...hex('#0a0906')); doc.rect(0,283,W,14,'F');
     doc.setTextColor(...hex('#7a5815')); doc.setFontSize(6.5); doc.setFont('helvetica','normal');
-    doc.text('Elysium Works · KZN South Coast · 071 818 1132 · elysiumweb@proton.me', M, 290);
+    doc.text('Elysium Works - KZN South Coast - 071 818 1132 - elysiumweb@proton.me', M, 290);
     doc.text(`${p}/${pages}`, W-M, 290, {align:'right'});
   }
 
@@ -5658,6 +5658,45 @@ async function migrateOldQuotesToJobs() {
     // Check which clients already have a migrated job (by client_id)
     const existingJobs = await dbGetAllJobs();
     const migratedClientIds = new Set(existingJobs.map(j => j.client_id));
+
+    // ── PATCH: fix jobs migrated with wrong status or type ──
+    for (const job of existingJobs) {
+      const client = clients.find(c => c.id === job.client_id);
+      if (!client) continue;
+      let changed = false;
+
+      // Status: trust client.stage over what migration guessed
+      const correctStatus = client.stage || 'enquiry';
+      if (job.status !== correctStatus) {
+        job.status = correctStatus;
+        changed = true;
+      }
+
+      // Type: re-detect from client.job_type
+      const jt = (client.job_type || '').toLowerCase();
+      let correctType = 'quote';
+      if (jt.includes('appliance') || jt.includes('repair') || jt.includes('toaster') ||
+          jt.includes('wash') || jt.includes('micro') || jt.includes('tumble')) {
+        correctType = 'appliance';
+      } else if (jt.includes('inspect')) {
+        correctType = 'inspection';
+      } else if (jt.includes('patio') || jt.includes('enclos')) {
+        correctType = 'patio';
+      } else if (jt.includes('handyman') || jt.includes('general')) {
+        correctType = 'handyman';
+      }
+      if (job.type !== correctType) {
+        job.type = correctType;
+        changed = true;
+      }
+
+      if (changed) {
+        job.updated_at = Date.now();
+        await dbPutJob(job);
+        console.log(`[EW] Patched: ${job.client_name} ${job.ref} -> status:${job.status} type:${job.type}`);
+      }
+    }
+    // ── END PATCH ──
 
     let migrated = 0;
     for (const client of clients) {
@@ -5810,9 +5849,9 @@ function showEnquiryReview(enquiries) {
       <div style="font-family:'Syne',sans-serif;font-size:.9rem;font-weight:600;color:var(--md-cream)">${eq.name}</div>
       <div style="font-size:.78rem;color:var(--md-gold-dk);margin-top:.2rem">${eq.phone}</div>
       <div style="display:flex;gap:.5rem;margin-top:.5rem;flex-wrap:wrap">
-        <span style="font-size:.72rem;color:var(--md-muted)">${eq.area || '—'}</span>
+        <span style="font-size:.72rem;color:var(--md-muted)">${eq.area || '-'}</span>
         <span style="color:var(--md-border)">·</span>
-        <span style="font-size:.72rem;color:var(--md-muted)">${eq.job_type || '—'}</span>
+        <span style="font-size:.72rem;color:var(--md-muted)">${eq.job_type || '-'}</span>
       </div>
       <div style="display:flex;gap:.5rem;margin-top:.75rem">
         <button onclick="acceptEnquiry(${JSON.stringify(eq).replace(/"/g,'&quot;')})" 
