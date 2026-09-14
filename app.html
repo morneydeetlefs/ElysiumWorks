@@ -2130,6 +2130,20 @@ function rnd(n) {
   return `R ${Math.round(parseFloat(n)||0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ')}`;
 }
 
+// PDF-safe text sanitizer — strips/replaces characters jsPDF helvetica can't encode
+function pdfSafe(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/\u00A0/g, ' ')   // non-breaking space -> space
+    .replace(/[\u2013\u2014]/g, '-')  // en/em dash -> hyphen
+    .replace(/[\u2018\u2019]/g, "'")  // curly single quotes
+    .replace(/[\u201C\u201D]/g, '"')  // curly double quotes
+    .replace(/\u2022/g, '*')   // bullet
+    .replace(/\u2026/g, '...')  // ellipsis
+    .replace(/\u00B7/g, '.')   // middle dot
+    .replace(/[^\x00-\xFF]/g, '?');  // anything else outside Latin-1 -> ?
+}
+
 function uid() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 }
@@ -4750,12 +4764,12 @@ async function generateJobPDF(isInvoice) {
   doc.setTextColor(...hex('#7a5815')); doc.setFontSize(6.5); doc.setFont('helvetica','normal');
   doc.text('CLIENT', M+6, y+9); doc.text('PHONE', M+halfCW, y+9);
   doc.setTextColor(...hex('#f0e6ce')); doc.setFontSize(10); doc.setFont('helvetica','bold');
-  doc.text(client.name||'-', M+6, y+17); doc.text(client.phone||'-', M+halfCW, y+17);
+  doc.text(pdfSafe(client.name||'-'), M+6, y+17); doc.text(pdfSafe(client.phone||'-'), M+halfCW, y+17);
   doc.setTextColor(...hex('#7a5815')); doc.setFontSize(6.5); doc.setFont('helvetica','normal');
   doc.text('SITE ADDRESS', M+6, y+25); doc.text('JOB TYPE', M+halfCW, y+25);
   doc.setTextColor(...hex('#f0e6ce')); doc.setFontSize(9); doc.setFont('helvetica','bold');
-  doc.text(job.address||'-', M+6, y+33);
-  doc.text(job.type||'-', M+halfCW, y+33);
+  doc.text(pdfSafe(job.address||'-'), M+6, y+33);
+  doc.text(pdfSafe(job.type||'-'), M+halfCW, y+33);
   y += 46;
 
   // SCOPE
@@ -4764,7 +4778,7 @@ async function generateJobPDF(isInvoice) {
     doc.setDrawColor(...hex('#3A6B4F')); doc.rect(M,y,3,8,'F');
     doc.setTextColor(255,255,255); doc.setFontSize(7.5); doc.setFont('helvetica','bold');
     doc.text('SCOPE OF WORK', M+6, y+5.5); y+=10;
-    const scopeLines = doc.splitTextToSize(q.scope.trim(), CW-8);
+    const scopeLines = doc.splitTextToSize(pdfSafe(q.scope.trim()), CW-8);
     const sh = scopeLines.length*5.5+6;
     doc.setFillColor(255,255,255); doc.rect(M,y,CW,sh,'F');
     doc.setDrawColor(220,220,215); doc.rect(M,y,CW,sh,'S');
@@ -4782,7 +4796,7 @@ async function generateJobPDF(isInvoice) {
       if (!m.label) return;
       doc.setFillColor(255,255,255); doc.rect(M,y,CW,8,'F');
       doc.setTextColor(30,30,30); doc.setFontSize(8.5); doc.setFont('helvetica','normal');
-      doc.text(m.label, M+4, y+5.5);
+      doc.text(pdfSafe(m.label), M+4, y+5.5);
       doc.setFont('helvetica','bold'); doc.setTextColor(...hex('#1e5c38'));
       doc.text(`${m.value} ${m.unit||'m'}`, W-M-2, y+5.5, {align:'right'});
       doc.setDrawColor(220,220,215); doc.line(M,y+8,W-M,y+8);
@@ -4837,16 +4851,16 @@ async function generateJobPDF(isInvoice) {
     doc.setFillColor(...hex('#264736')); doc.rect(M,y,CW,8,'F');
     doc.setDrawColor(...hex('#3A6B4F')); doc.rect(M,y,3,8,'F');
     doc.setTextColor(255,255,255); doc.setFontSize(7.5); doc.setFont('helvetica','bold');
-    doc.text(title, M+6, y+5.5); y+=10;
+    doc.text(pdfSafe(title), M+6, y+5.5); y+=10;
     rows.forEach(l => {
       checkPg(10);
       const lineTotal = (parseFloat(l.qty)||1)*(parseFloat(l.unit_price)||0);
       doc.setFillColor(255,255,255); doc.rect(M,y,CW,9,'F');
       doc.setTextColor(30,30,30); doc.setFontSize(8.5); doc.setFont('helvetica','normal');
-      const dlines = doc.splitTextToSize(l.description||'', CW-50);
+      const dlines = doc.splitTextToSize(pdfSafe(l.description||''), CW-50);
       doc.text(dlines, M+4, y+6);
       doc.setTextColor(...hex('#555')); doc.setFontSize(7.5);
-      doc.text(`${l.qty||1} ${l.unit||'each'}`, M+CW*0.6, y+6);
+      doc.text(pdfSafe(`${l.qty||1} ${l.unit||'each'}`), M+CW*0.6, y+6);
       doc.setTextColor(...hex('#1e5c38')); doc.setFont('helvetica','bold'); doc.setFontSize(8.5);
       doc.text(rnd(lineTotal), W-M-2, y+6, {align:'right'});
       doc.setDrawColor(220,220,215); doc.line(M,y+9,W-M,y+9);
@@ -4894,11 +4908,11 @@ async function generateJobPDF(isInvoice) {
     doc.setTextColor(255,255,255); doc.setFontSize(7.5); doc.setFont('helvetica','bold');
     doc.text('PAYMENT TERMS', M+6, y+5.5); y+=10;
     let termsArr=[];
-    if (hasDeposit) termsArr.push(`Deposit: ${q.deposit.trim()}`);
-    if (hasTerms) termsArr.push(q.terms.trim());
+    if (hasDeposit) termsArr.push(`Deposit: ${pdfSafe(q.deposit.trim())}`);
+    if (hasTerms) termsArr.push(pdfSafe(q.terms.trim()));
     if (!termsArr.length && !isInvoice) termsArr=['This quotation is valid for 30 days.','A deposit is required to confirm the booking.'];
     if (q.validUntil) termsArr.push(`Valid until: ${new Date(q.validUntil).toLocaleDateString('en-ZA')}`);
-    const tLines = doc.splitTextToSize(termsArr.join('\n'), CW-8);
+    const tLines = doc.splitTextToSize(pdfSafe(termsArr.join('\n')), CW-8);
     const tH = tLines.length*5+6;
     doc.setFillColor(255,255,255); doc.rect(M,y,CW,tH,'F');
     doc.setDrawColor(220,220,215); doc.rect(M,y,CW,tH,'S');
@@ -4924,7 +4938,7 @@ async function generateJobPDF(isInvoice) {
     by+=6.5;
   });
   doc.setTextColor(...hex('#4caf7a')); doc.setFontSize(6.5); doc.setFont('helvetica','italic');
-  doc.text(`Reference: "${client.name} - ${job.ref||''}"`, colA, by);
+  doc.text(`Reference: "${pdfSafe(client.name)} - ${job.ref||''}"`, colA, by);
   y+=36;
 
   // FOOTER
@@ -4938,7 +4952,7 @@ async function generateJobPDF(isInvoice) {
   }
 
   const docType = isInvoice ? 'Invoice' : 'Quote';
-  const fname = `EW_${docType}_${client.name.replace(/\s+/g,'_')}_${job.ref||'job'}.pdf`;
+  const fname = `EW_${docType}_${pdfSafe(client.name).replace(/\s+/g,'_')}_${job.ref||'job'}.pdf`;
   doc.save(fname);
   showToast(`${docType} PDF generated`, 'success');
 
