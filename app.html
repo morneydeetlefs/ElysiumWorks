@@ -2130,18 +2130,32 @@ function rnd(n) {
   return `R ${Math.round(parseFloat(n)||0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ')}`;
 }
 
-// PDF-safe text sanitizer — strips/replaces characters jsPDF helvetica can't encode
+// PDF-safe text sanitizer — converts to pure ASCII that jsPDF helvetica can handle
 function pdfSafe(str) {
-  if (!str) return '';
+  if (str === null || str === undefined) return '';
   return String(str)
-    .replace(/\u00A0/g, ' ')   // non-breaking space -> space
-    .replace(/[\u2013\u2014]/g, '-')  // en/em dash -> hyphen
-    .replace(/[\u2018\u2019]/g, "'")  // curly single quotes
-    .replace(/[\u201C\u201D]/g, '"')  // curly double quotes
-    .replace(/\u2022/g, '*')   // bullet
-    .replace(/\u2026/g, '...')  // ellipsis
-    .replace(/\u00B7/g, '.')   // middle dot
-    .replace(/[^\x00-\xFF]/g, '?');  // anything else outside Latin-1 -> ?
+    .replace(/\u00A0/g, ' ')
+    .replace(/[\u2013\u2014\u2012]/g, '-')
+    .replace(/[\u2018\u2019\u02BC]/g, "'")
+    .replace(/[\u201C\u201D]/g, '"')
+    .replace(/\u2022/g, '*')
+    .replace(/\u2026/g, '...')
+    .replace(/[\u00B7\u22C5]/g, '.')
+    .replace(/\u00D7/g, 'x')
+    .replace(/\u00F7/g, '/')
+    .replace(/\u00BD/g, '1/2')
+    .replace(/\u00BC/g, '1/4')
+    .replace(/\u00BE/g, '3/4')
+    .replace(/\u00B0/g, ' deg')
+    .replace(/\u00B2/g, '2')
+    .replace(/\u00B3/g, '3')
+    .replace(/\u20AC/g, 'EUR')
+    .replace(/\u00A3/g, 'GBP')
+    .replace(/\u00E9/g, 'e').replace(/\u00E8/g, 'e').replace(/\u00EA/g, 'e')
+    .replace(/\u00E0/g, 'a').replace(/\u00E2/g, 'a').replace(/\u00E4/g, 'a')
+    .replace(/\u00F6/g, 'o').replace(/\u00FC/g, 'u').replace(/\u00EB/g, 'e')
+    .replace(/\u00EF/g, 'i').replace(/\u00E7/g, 'c').replace(/\u00F1/g, 'n')
+    .replace(/[^\x20-\x7E]/g, '');  // strip anything still outside printable ASCII
 }
 
 function uid() {
@@ -4717,6 +4731,8 @@ async function generateJobPDF(isInvoice) {
   const settingsRec = await dbGet('settings', 'company');
   const co = settingsRec ? settingsRec.value : {};
 
+  try {
+
   const doc = new jsPDF({ unit:'mm', format:'a4', orientation:'portrait' });
   const W = 210, M = 18, CW = W - M*2;
   let y = 0;
@@ -4852,19 +4868,27 @@ async function generateJobPDF(isInvoice) {
     doc.setDrawColor(...hex('#3A6B4F')); doc.rect(M,y,3,8,'F');
     doc.setTextColor(255,255,255); doc.setFontSize(7.5); doc.setFont('helvetica','bold');
     doc.text(pdfSafe(title), M+6, y+5.5); y+=10;
-    rows.forEach(l => {
-      checkPg(10);
-      const lineTotal = (parseFloat(l.qty)||1)*(parseFloat(l.unit_price)||0);
-      doc.setFillColor(255,255,255); doc.rect(M,y,CW,9,'F');
-      doc.setTextColor(30,30,30); doc.setFontSize(8.5); doc.setFont('helvetica','normal');
-      const dlines = doc.splitTextToSize(pdfSafe(l.description||''), CW-50);
-      doc.text(dlines, M+4, y+6);
-      doc.setTextColor(...hex('#555')); doc.setFontSize(7.5);
-      doc.text(pdfSafe(`${l.qty||1} ${l.unit||'each'}`), M+CW*0.6, y+6);
-      doc.setTextColor(...hex('#1e5c38')); doc.setFont('helvetica','bold'); doc.setFontSize(8.5);
-      doc.text(rnd(lineTotal), W-M-2, y+6, {align:'right'});
-      doc.setDrawColor(220,220,215); doc.line(M,y+9,W-M,y+9);
-      y+=dlines.length*5+5;
+    rows.forEach((l, rowIdx) => {
+      try {
+        checkPg(10);
+        const lineTotal = (parseFloat(l.qty)||1)*(parseFloat(l.unit_price)||0);
+        doc.setFillColor(255,255,255); doc.rect(M,y,CW,9,'F');
+        doc.setTextColor(30,30,30); doc.setFontSize(8.5); doc.setFont('helvetica','normal');
+        const safeDesc = pdfSafe(l.description||'-') || '-';
+        const dlines = doc.splitTextToSize(safeDesc, CW-50);
+        const safeLines = (Array.isArray(dlines) && dlines.length) ? dlines : [safeDesc];
+        doc.text(safeLines, M+4, y+6);
+        doc.setTextColor(...hex('#555')); doc.setFontSize(7.5);
+        const qtyUnit = pdfSafe(`${l.qty||1} ${l.unit||'each'}`) || '1 each';
+        doc.text(qtyUnit, M+CW*0.6, y+6);
+        doc.setTextColor(...hex('#1e5c38')); doc.setFont('helvetica','bold'); doc.setFontSize(8.5);
+        doc.text(rnd(lineTotal), W-M-2, y+6, {align:'right'});
+        doc.setDrawColor(220,220,215); doc.line(M,y+9,W-M,y+9);
+        y+=safeLines.length*5+5;
+      } catch(rowErr) {
+        console.warn(`PDF row ${rowIdx} skipped:`, rowErr.message, l);
+        y+=10;
+      }
     });
     y+=3;
   };
@@ -4951,13 +4975,22 @@ async function generateJobPDF(isInvoice) {
     doc.text(`${pg}/${pages}`, W-M, 290, {align:'right'});
   }
 
-  const docType = isInvoice ? 'Invoice' : 'Quote';
-  const fname = `EW_${docType}_${pdfSafe(client.name).replace(/\s+/g,'_')}_${job.ref||'job'}.pdf`;
-  doc.save(fname);
-  showToast(`${docType} PDF generated`, 'success');
+  try {
+    const docType = isInvoice ? 'Invoice' : 'Quote';
+    const fname = `EW_${docType}_${pdfSafe(client.name).replace(/\s+/g,'_')}_${job.ref||'job'}.pdf`;
+    doc.save(fname);
+    showToast(`${docType} PDF generated`, 'success');
+    if (!isInvoice && currentJob.status === 'enquiry') await setJobStatus('quoted');
+    if (isInvoice && currentJob.status === 'done')     await setJobStatus('invoiced');
+  } catch(saveErr) {
+    console.error('PDF save error:', saveErr);
+    showToast('PDF failed — check console for details', 'error');
+  }
 
-  if (!isInvoice && currentJob.status === 'enquiry') await setJobStatus('quoted');
-  if (isInvoice && currentJob.status === 'done')     await setJobStatus('invoiced');
+  } catch(pdfErr) {
+    console.error('PDF generation failed:', pdfErr.message, pdfErr);
+    showToast('PDF failed: ' + pdfErr.message.slice(0,80), 'error');
+  }
 }
 
 function openEditClientModal() {
