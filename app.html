@@ -3643,7 +3643,7 @@ async function openClientDetail(clientId) {
   document.getElementById('det-name').textContent = client.name;
   document.getElementById('det-phone').textContent = client.phone || 'No phone';
 
-  renderStageStepper(client.stage);
+  renderStageStepper(client.stage);  // default — overridden below if jobs exist
   currentDetailTab = 'current';
   updateDetailTabUI();
   await renderCurrentJob(client);
@@ -3704,6 +3704,9 @@ async function renderCurrentJob(client) {
   // Has jobs — show most recent job inline
   const latest = jobs[0];
   currentJob = latest;
+
+  // Sync stepper to this job's status
+  renderStageStepper(latest.status || 'enquiry');
 
   el.innerHTML = `
     <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.75rem">
@@ -3932,6 +3935,9 @@ async function openJobDetail(jobId) {
 
   document.getElementById('jd-title').textContent = job.description || 'Job';
   document.getElementById('jd-ref').textContent = (job.ref || '') + (job.address ? ' · ' + job.address : '');
+
+  // Sync the stepper in the client detail header to this job
+  renderStageStepper(job.status || 'enquiry');
 
   renderJobDetail(job);
   showScreen('job-detail');
@@ -4232,6 +4238,7 @@ async function setJobStatus(stageId) {
   currentJob.status = stageId;
   currentJob.updated_at = Date.now();
   await dbPutJob(currentJob);
+  renderStageStepper(stageId);
   renderJobDetail(currentJob);
   showToast(`Status: ${STAGES.find(s=>s.id===stageId)?.label}`, 'success');
 }
@@ -5046,7 +5053,7 @@ function renderStageStepper(activeStage) {
     const isActive = i === activeIdx;
     const cls = isDone ? 'done' : isActive ? 'active' : '';
     if (i > 0) html += `<div class="step-connector ${isDone?'done':''}"></div>`;
-    html += `<div class="step-item ${cls}" onclick="setClientStage('${s.id}')">
+    html += `<div class="step-item ${cls}" onclick="setStageFromStepper('${s.id}')">
       <div class="step-circle">${isDone ? '✓' : s.icon}</div>
       <div class="step-label">${s.label}</div>
     </div>`;
@@ -5054,15 +5061,29 @@ function renderStageStepper(activeStage) {
   document.getElementById('stageStepper').innerHTML = html;
 }
 
-async function setClientStage(stageId) {
+// Stepper tap — updates the current job's status (and client stage for backwards compat)
+async function setStageFromStepper(stageId) {
   if (!currentClient) return;
+
+  // If we have a current job open, update the job
+  if (currentJob && currentJob.client_id === currentClient.id) {
+    currentJob.status = stageId;
+    currentJob.updated_at = Date.now();
+    await dbPutJob(currentJob);
+    renderStageStepper(stageId);
+    showToast(`${currentJob.ref || 'Job'} moved to ${STAGES.find(s=>s.id===stageId)?.label}`, 'success');
+    // Refresh current tab
+    if (currentDetailTab === 'current') await renderCurrentJob(currentClient);
+    else if (currentDetailTab === 'jobs') await renderJobHistory(currentClient);
+    return;
+  }
+
+  // Fallback — update client stage directly (for clients with no jobs yet)
   currentClient.stage = stageId;
   currentClient.updated_at = Date.now();
   await dbPutClient(currentClient);
   renderStageStepper(stageId);
   showToast(`Moved to ${STAGES.find(s=>s.id===stageId)?.label}`, 'success');
-  // Update the client card in the list behind the detail screen
-  // so it's correct when user goes back without full reload
   const card = document.querySelector(`[onclick="openClientDetail('${currentClient.id}')"]`);
   if (card) {
     const stage = STAGES.find(s => s.id === stageId) || STAGES[0];
