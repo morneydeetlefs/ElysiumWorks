@@ -1,182 +1,229 @@
 # Elysium Works — Project Handoff Document
-**For: Next Claude session** | **Date: September 2026**
+**Version: v4.1** | **Date: October 2026**
 
 ---
 
 ## 1. Who This Is For
 
-The owner is building a zero-cost full-stack business platform for **Elysium Works**, a local handyman, appliance repair, and building services business based in **Elysium / Ifafa, KZN South Coast, South Africa**.
+Owner: **Morney Deetlefs** — Elysium Works, Elysium / Ifafa, KZN South Coast, South Africa.
 
-He is a polymath with:
-- Full residential construction experience (foundations to roof tiles)
-- Appliance repair expertise (microwaves, washing machines, tumble dryers, etc.)
-- Most modules completed toward a mechanical engineering qualification (does NOT claim full engineer title)
-- Carpentry, plumbing, plan reading, surveying, project management
-- Glass and aluminium patio enclosure work
+Skills: Full residential construction, appliance repair, carpentry, plumbing, plan reading, surveying, project management, glass and aluminium patio enclosures. Mechanical engineering (most modules, does NOT claim full engineer title).
 
-**Tone of brand**: Warm, community-first, approachable, honest. Not corporate.
+**Tone**: Warm, community-first, approachable, honest. Not corporate.
 
 ---
 
-## 2. What Is Already Live
+## 2. What Is Live
 
-**Website**: https://elysiumworks.pages.dev/ — LIVE and deployed on Cloudflare Pages via GitHub.
+| Item | URL / Location | Status |
+|---|---|---|
+| Main website | https://elysiumworks.pages.dev | ✅ Live |
+| App (PWA) | https://elysiumworks.pages.dev/app | ✅ Live |
+| Cloudflare Worker API | https://elysium-works-api.morneydeetlefs.workers.dev | ✅ Live |
+| GitHub repo | https://github.com/morneydeetlefs/ElysiumWorks | ✅ Connected |
+| Cloudflare D1 DB | elysium-works-db (ID: 1d1bcca7-b13c-436a-98b5-68b8722394c7) | ✅ Live |
 
-The site includes:
-- Hero section (tagline: "no job too small, no build too big")
-- Tabbed services: Appliances / Handyman / Building & Patio / Consulting
-- Zone-based callout calculator (R50 local, +R50 per ~5km)
-- About section with honest note about qualifications
-- Digital guides / downloads section (Gumroad links — not yet set up)
-- Contact form with WhatsApp, phone (071 818 1132), email (elysiumweb@proton.me)
+---
 
-**Callout zones already on live site:**
-- Elysium / Ifafa — R50
-- Mtwalumi — R75
-- Bazley — R100
-- Pennington / Umzumbe — R150
-- Hibberdene / Umzinto — R200
-- Scottburgh / Park Rynie — R250
-- Port Shepstone / further — R300+
+## 3. Tech Stack
 
-**Brand colours** (from the website):
-- Brand dark (nav/hero): `#264736`
+| Layer | Tool | Notes |
+|---|---|---|
+| Hosting | Cloudflare Pages | Auto-deploys from GitHub main branch |
+| Database | Cloudflare D1 (SQLite) | Edge database |
+| File storage | Backblaze B2 | NOT Cloudflare R2 — user chose B2 |
+| API | Cloudflare Workers | worker/src/index.js |
+| PDF | jsPDF (client-side) | Loaded from cdnjs |
+| Auth | PIN + JWT (12hr TTL) | ADMIN_PIN and JWT_SECRET in Worker env vars |
+
+---
+
+## 4. Brand
+
+- Dark nav/hero: `#264736`
 - Brand green: `#3A6B4F`
 - Brand mid: `#4E8C68`
 - Brand light: `#EAF2EC`
 - Accent orange: `#C2601A`
 - Warm background: `#F8F6F1`
 - Fonts: Fraunces (serif/headings) + Outfit (sans/body)
+- Phone: 071 818 1132
+- Email: elysiumweb@proton.me
+- Banking: ABSA, Monique Deetlefs, 9347485805, branch 632005
 
 ---
 
-## 3. Full Tech Stack
+## 5. App Architecture
 
-| Layer | Tool | Status |
-|---|---|---|
-| Hosting | Cloudflare Pages | ✅ Live |
-| CI/CD | GitHub → Cloudflare Pages | ✅ Connected |
-| Database | Cloudflare D1 (SQLite at edge) | 🔲 Not yet set up |
-| File storage | **Backblaze B2** (NOT Cloudflare R2) | 🔲 Account needed |
-| API / backend | Cloudflare Workers | 🔲 Not yet built |
-| PDF generation | jsPDF (client-side, on-device) | 🔲 Not yet built |
-| Auth | Cloudflare Workers token-based | 🔲 Not yet built |
+### Single-file PWA
+- `app.html` — entire app (6000+ lines), offline-first PWA
+- IndexedDB version: **4** (stores: projects, settings, clients_crm, jobs)
+- Service worker caches app shell for offline use
 
-**Important**: User explicitly chose Backblaze B2 over Cloudflare R2. B2 is S3-compatible, has 10GB free, and has zero egress cost when paired with Cloudflare (bandwidth alliance). All photo and PDF storage goes to B2.
+### Key globals
+- `currentClient` — currently open client object
+- `currentJob` — currently open job object
+- `currentDetailTab` — 'current' | 'jobs' | 'notes'
+- `WORKER_URL` — set in settings screen
+- `cloudToken` — JWT from /api/auth
 
----
-
-## 4. Database Schema (Cloudflare D1)
-
-Three tables — not yet created, ready to implement:
-
-```sql
--- Table 1: clients
-CREATE TABLE clients (
-  id TEXT PRIMARY KEY,
-  name TEXT,
-  phone TEXT,
-  email TEXT,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-
--- Table 2: projects (inspections)
-CREATE TABLE projects (
-  id TEXT PRIMARY KEY,
-  client_id TEXT REFERENCES clients(id),
-  property_address TEXT,
-  inspection_date DATETIME,
-  status TEXT CHECK(status IN ('Draft','Completed','Sent')),
-  total_estimated_repair_cost REAL,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-
--- Table 3: inspection_items
-CREATE TABLE inspection_items (
-  id TEXT PRIMARY KEY,
-  project_id TEXT REFERENCES projects(id),
-  zone_name TEXT,
-  item_name TEXT,
-  status TEXT CHECK(status IN ('Pass','Fail','Monitor','NA')),
-  notes TEXT,
-  photo_url TEXT,
-  estimated_cost REAL
-);
+### Screen flow
+```
+Home → Clients → Client Detail (3 tabs) → Job Detail → Job PDF
+                                        → Sketch Canvas
+                                        → Annotate Photo
+     → Inspection → Zone Checklist → Inspection PDF
+     → Settings
 ```
 
 ---
 
-## 5. The Inspection App — What to Build Next
+## 6. Database Schema (D1)
 
-### Priority order:
-1. **Core PWA shell** — installable to home screen, works offline
-2. **Checklist UI** — zone-by-zone, Pass/Fail/Monitor/NA taps
-3. **Photo capture** — camera access, compress on-device, queue for B2 upload
-4. **PDF generation** — branded report, runs on-device with jsPDF
-5. **Background sync** — push to D1 + B2 when signal returns
-6. **Admin dashboard** — client and project tracking (do last)
+```sql
+clients          -- basic contact info
+projects         -- home inspections
+inspection_items -- per-item inspection results
+clients_crm      -- full client JSON blob (offline-first CRM)
+jobs             -- construction quotes, appliance jobs, etc.
+quote_line_items -- normalised line items for reporting
+enquiries        -- website form submissions
+```
 
-### Architecture decisions made:
-- **Offline-first PWA** using service worker + IndexedDB
-- Service worker caches app shell so it loads with zero signal
-- All inspection data saved to IndexedDB instantly on-device
-- Photos compressed on-device before queuing for upload
-- Sync queue pushes to cloud (D1 + B2) when signal returns
-- PDF generated locally on-device (jsPDF) — works offline
-- Standalone app at `app.elysiumworks.pages.dev` (separate from main site) — **this decision was pending confirmation**, ask user to confirm
-
-### The 120-point inspection zones (to build the checklist around):
-Standard SA home inspection zones — confirm with user but likely:
-Roof & Attic, Gutters & Drainage, Exterior Walls, Windows & Doors, Foundation & Structure, Garage, Kitchen, Bathrooms, Plumbing, Electrical, Ceilings & Floors, Interior Walls, HVAC / Geysers, Garden & Boundary
-
-### Mobile UI requirements:
-- Big tap targets (min 48px)
-- One-handed usable
-- Fast tap → Pass / Fail / Monitor with colour feedback (green/red/amber)
-- Notes field expands on tap
-- Cost field numeric keyboard
-- Photo button opens camera directly
-- Progress bar per zone and overall
+### Jobs table (v4)
+- `id` TEXT PRIMARY KEY
+- `client_id` TEXT (FK to clients_crm.id)
+- `client_name` TEXT (denormalised)
+- `type` TEXT — quote | appliance | handyman | inspection | patio | other
+- `ref` TEXT — e.g. EW-Q-26-001
+- `description`, `address`, `visit_date`, `status`
+- `data` TEXT — lean JSON blob (no base64)
+- `updated_at` INTEGER — epoch ms for last-write-wins sync
 
 ---
 
-## 6. Pending Decisions (Ask User at Start of Next Session)
+## 7. Sync Architecture
 
-1. **Backblaze B2 account** — has it been created yet? Need bucket name and API keys.
-2. **App location** — standalone `app.elysiumworks.pages.dev` or same repo?
-3. **Inspection zones** — confirm the zone/category names for the 120-point checklist
-4. **Auth** — single password for owner only, or does he have a small team?
-5. **Gumroad** — has an account been set up for the digital guides yet?
+### Push (device → D1)
+- `pushClients()` — sends full client blobs
+- `pushJobs()` — sends job metadata (strips base64 photos before sending)
+- `syncToCloud()` — sends inspection projects
+
+### Pull (D1 → device)
+- `pullClients()` — pulls clients updated since last sync
+- `pullJobs()` — pulls job metadata updated since last sync; merges into local, preserving photos
+
+### Sync triggers
+- On login
+- Every 5 minutes while app is open
+- On tab visibility change (user returns to app)
+
+### Important: Photos stay local
+Photos and sketches are stored in IndexedDB only — they are NOT synced to D1 (too large). If you need cross-device photos, Backblaze B2 integration is the next step.
 
 ---
 
-## 7. Income Streams Discussed
+## 8. Job Number System
+
+Format: `EW-{TYPE}-{YY}-{SEQ}`
+- Q = Construction Quote
+- A = Appliance Repair
+- I = Home Inspection
+- H = Handyman
+
+Sequence stored in `settings` IndexedDB store as `jobseq_Q`, `jobseq_A` etc.
+
+---
+
+## 9. Known Clients in System (Oct 2026)
+
+| Ref | Client | Job | Status |
+|---|---|---|---|
+| EW-A-26-001 | Brenda | Razor wire installation | Paid |
+| EW-A-26-002 | Michelle | TV repair | Paid |
+| EW-Q-26-001 | Vanessa | Toaster repair | Paid |
+| EW-Q-26-002 | Billy Gough | Fence installation | Enquiry |
+| EW-Q-26-003 | Athol Perry | Custom timber bed headboards | Paid |
+| EW-Q-26-004 | Brenda | Garden table + benches | Paid |
+
+---
+
+## 10. PDF Generation
+
+### jsPDF notes (CRITICAL)
+- Library: loaded from cdnjs as UMD bundle
+- Font: helvetica only — NO unicode support
+- All text must pass through `pdfSafe()` before `doc.text()`
+- `pdfSafe()` strips/replaces: em/en dashes, curly quotes, multiplication signs, non-breaking spaces, anything outside printable ASCII
+- `rnd()` formats currency — do NOT use `toLocaleString('en-ZA')` in doc.text calls (produces non-breaking space thousands separator)
+- The entire PDF body is wrapped in try/catch that shows a toast with the error
+
+### Generated PDFs
+- **Quote PDF** — scope, measurements, sketch image, site photos, line items, totals, banking details
+- **Invoice PDF** — same but headed INVOICE
+
+---
+
+## 11. Pending / Known Issues
+
+- **Enquiries** — website form submissions arrive in D1 but there's no permanent UI to view them. There's a boot-time notification banner but it disappears. Need a permanent Enquiries tab on the Clients screen.
+- **Photos not cross-device** — photos taken on phone don't appear on PC (by design — B2 integration needed for this)
+- **Sketch not cross-device** — same reason
+- **Worker environment warning** — wrangler.toml has `[env.production]` block causing "multiple environments" warning on deploy. Harmless but can be cleaned up.
+
+---
+
+## 12. Files in Repo
+
+```
+app.html              — entire PWA app
+index.html            — main website
+demo.html             — demo page
+worker/
+  schema.sql          — D1 schema (run with --remote to apply)
+  src/index.js        — Cloudflare Worker API
+  wrangler.toml       — Worker config
+.gitignore            — excludes *.zip, *.exe, node_modules, .wrangler
+```
+
+---
+
+## 13. Deploy Process
+
+```bash
+# App only (most common)
+git add app.html
+git commit -m "description"
+git push
+# Cloudflare Pages auto-builds in ~60 seconds
+
+# Worker changes
+cd worker
+wrangler deploy
+
+# Schema changes
+wrangler d1 execute elysium-works-db --file=schema.sql --remote
+```
+
+---
+
+## 14. Environment Variables (Worker)
+
+Set in Cloudflare Dashboard → Workers → elysium-works-api → Settings → Variables:
+- `ADMIN_PIN` — numeric PIN for login
+- `JWT_SECRET` — long random string for token signing
+
+---
+
+## 15. Income Streams
 
 | Stream | Status |
 |---|---|
-| Local services (callout-based) | Site live, ready to take bookings |
-| Digital guides on Gumroad | Site ready, Gumroad account not yet set up |
-| Inspection PDF reports as a premium service | App to be built |
-| Community workshops | Listed on site, not yet scheduled |
+| Local services (callout-based) | Live — taking bookings via WhatsApp |
+| Digital guides on Gumroad | Site ready — Gumroad account not set up |
+| Inspection PDF reports | App built — not yet marketed |
+| Community workshops | Listed on site — not scheduled |
 
 ---
 
-## 8. Tone Notes for Responses
-
-- He appreciates directness and practical advice
-- No over-engineering — keep costs at R0/month
-- Community-first framing resonates (he's been repairing appliances for neighbours for free)
-- He is hands-on and capable — don't over-explain basic concepts
-- South African context: prices in Rands, Gumroad for digital sales, WhatsApp is primary contact channel, PayFast/Yoco for payments
-
----
-
-## 9. Files & Assets
-
-- Live site code: in his GitHub repo connected to Cloudflare Pages
-- Brand assets: embedded in the site HTML (no separate asset files mentioned)
-- Project brief: stored in Claude project files as `update_to_v4`
-
----
-
-*End of handoff. Paste this document at the start of the next session and say "continue the Elysium Works project".*
+*End of handoff v4.1*
