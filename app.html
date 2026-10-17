@@ -1852,8 +1852,9 @@ body::before {
       <div class="modal-title">New Job</div>
       <div class="form-group">
         <label class="form-label">Job Type</label>
-        <select class="form-input" id="nj-type">
+        <select class="form-input" id="nj-type" onchange="onNewJobTypeChange()">
           <option value="quote">Construction Quote (fencing, roofing, building)</option>
+          <option value="factory">Factory / Mechanical Engineering</option>
           <option value="appliance">Appliance Repair</option>
           <option value="handyman">Handyman / General</option>
           <option value="inspection">Home Inspection</option>
@@ -1861,8 +1862,22 @@ body::before {
           <option value="other">Other</option>
         </select>
       </div>
+      <div id="nj-factory-fields" style="display:none">
+        <div class="form-group">
+          <label class="form-label">Company</label>
+          <input class="form-input" id="nj-company" type="text" placeholder="e.g. Illovo Sugar - Eston Mill" autocomplete="off"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Contact Person</label>
+          <input class="form-input" id="nj-contact" type="text" placeholder="e.g. Maintenance manager" autocomplete="off"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">PO Number (if issued)</label>
+          <input class="form-input" id="nj-po" type="text" placeholder="Leave blank until the PO arrives" autocomplete="off"/>
+        </div>
+      </div>
       <div class="form-group">
-        <label class="form-label">Site / Property Address</label>
+        <label class="form-label" id="nj-address-label">Site / Property Address</label>
         <input class="form-input" id="nj-address" type="text" placeholder="e.g. 14 Coral Way, Pennington" autocomplete="off"/>
       </div>
       <div class="form-group">
@@ -2914,6 +2929,7 @@ function triggerPhoto(zoneIdx, itemIdx) {
   const zone = ZONES[zoneIdx];
   const item = zone.items[itemIdx];
   photoTargetKey = `${zone.name}::${item}`;
+  setPhotoCapture(true);
   document.getElementById('photo-capture').click();
 }
 
@@ -2922,15 +2938,18 @@ document.getElementById('photo-capture').addEventListener('change', async functi
   if (!files.length || !photoTargetKey) return;
 
   const key = photoTargetKey;
+  photoTargetKey = null;   // one-shot: otherwise later job/client photos would also land on this inspection item
   if (!itemStatuses[key]) itemStatuses[key] = {};
   if (!itemStatuses[key].photos) itemStatuses[key].photos = [];
 
+  let added = 0;
   for (const file of files) {
     const compressed = await compressImage(file, 800, 0.7);
-    itemStatuses[key].photos.push(compressed);
+    if (compressed) { itemStatuses[key].photos.push(compressed); added++; }
   }
+  if (!added) { showToast('Could not read that photo', 'error'); this.value = ''; return; }
 
-  showToast(`${files.length} photo${files.length > 1 ? 's' : ''} added`, 'success');
+  showToast(`${added} photo${added > 1 ? 's' : ''} added`, 'success');
   debounceAutoSave();
 
   // Refresh just the photo button
@@ -2947,11 +2966,15 @@ document.getElementById('photo-capture').addEventListener('change', async functi
   this.value = '';
 });
 
+// Resolves to a JPEG data URL, or null if the file can't be read as an image
+// (e.g. an unsupported format picked from the gallery). Callers must skip nulls.
 function compressImage(file, maxDim, quality) {
   return new Promise(resolve => {
     const reader = new FileReader();
+    reader.onerror = () => resolve(null);
     reader.onload = e => {
       const img = new Image();
+      img.onerror = () => resolve(null);
       img.onload = () => {
         const canvas = document.createElement('canvas');
         let { width, height } = img;
@@ -3895,11 +3918,14 @@ async function renderJobHistory(client) {
   document.getElementById('clientDetailContent').innerHTML = html;
 }
 
+const JOB_TYPE_LABELS = { quote:'Construction Quote', factory:'Factory / Mechanical', appliance:'Appliance Repair', handyman:'Handyman', inspection:'Inspection', patio:'Patio / Enclosure', other:'Other' };
+function jobTypeLabel(t) { return JOB_TYPE_LABELS[t] || t || '-'; }
+
 function jobCardHTML(j) {
   const date = j.visit_date ? new Date(j.visit_date).toLocaleDateString('en-ZA', {day:'numeric',month:'short',year:'numeric'}) : '—';
   const total = calcJobTotal(j);
   const stage = STAGES.find(s => s.id === j.status) || { icon: '📋', label: j.status || 'Draft', cls: 'sp-quoted' };
-  const typeLabel = { quote:'Construction Quote', appliance:'Appliance Repair', handyman:'Handyman', inspection:'Inspection', patio:'Patio / Enclosure', other:'Other' }[j.type] || j.type;
+  const typeLabel = jobTypeLabel(j.type);
   return `<div class="job-card" onclick="openJobDetail('${j.id}')">
     <div class="job-ref">${j.ref || ''} · ${typeLabel}</div>
     <div class="job-desc">${j.description || '-'}</div>
@@ -3957,8 +3983,19 @@ function openNewJobModal() {
   document.getElementById('nj-date').value = today;
   document.getElementById('nj-address').value = currentClient?.area || '';
   document.getElementById('nj-desc').value = '';
+  ['nj-company','nj-contact','nj-po'].forEach(id => { document.getElementById(id).value = ''; });
+  onNewJobTypeChange();
   openModal('newJobModal');
   setTimeout(() => document.getElementById('nj-desc').focus(), 350);
+}
+
+// Show the company / contact / PO fields only for factory jobs
+function onNewJobTypeChange() {
+  const isFactory = document.getElementById('nj-type').value === 'factory';
+  document.getElementById('nj-factory-fields').style.display = isFactory ? '' : 'none';
+  document.getElementById('nj-address-label').textContent = isFactory ? 'Plant / Site Address' : 'Site / Property Address';
+  document.getElementById('nj-address').placeholder = isFactory ? 'e.g. Gate 3, Eston Mill' : 'e.g. 14 Coral Way, Pennington';
+  document.getElementById('nj-desc').placeholder = isFactory ? 'e.g. Repair conveyor drive bracket' : 'e.g. Replace braai area roof, 6m span';
 }
 
 async function saveNewJob() {
@@ -3968,10 +4005,12 @@ async function saveNewJob() {
   const desc    = document.getElementById('nj-desc').value.trim();
   const date    = document.getElementById('nj-date').value;
   if (!desc) { showToast('Please add a description', 'error'); return; }
+  const isFactory = type === 'factory';
 
-  // Ref number — Q for quotes/construction, I for inspection, A for appliance, H for handyman
-  const typeCode = { quote:'Q', inspection:'I', appliance:'A', handyman:'H', patio:'Q', other:'Q' }[type] || 'Q';
+  // Ref number — Q for quotes/construction, I for inspection, A for appliance, H for handyman, M for factory / mechanical
+  const typeCode = { quote:'Q', inspection:'I', appliance:'A', handyman:'H', patio:'Q', other:'Q', factory:'M' }[type] || 'Q';
   const ref = await nextJobNumber(typeCode);
+  const validUntil30 = new Date(Date.now() + 30*86400000).toISOString().split('T')[0];
 
   const job = {
     id: uid(),
@@ -3984,11 +4023,22 @@ async function saveNewJob() {
     visit_date: date ? new Date(date).getTime() : Date.now(),
     status: 'enquiry',
     quote: {
-      callout: 50,
+      callout: isFactory ? 0 : 50,
       lines: [],   // { id, description, qty, unit, unit_price }
       discountType: '', discountValue: '',
-      deposit: '', terms: '', scope: '', validUntil: '',
+      deposit: '',
+      terms: isFactory ? 'Payment within 30 days of invoice date.' : '',
+      scope: '',
+      validUntil: isFactory ? validUntil30 : '',
     },
+    // Factory / mechanical jobs only
+    factory: isFactory ? {
+      company:    document.getElementById('nj-company').value.trim(),
+      contact:    document.getElementById('nj-contact').value.trim(),
+      po:         document.getElementById('nj-po').value.trim(),
+      leadTime:   '',
+      exclusions: '',
+    } : null,
     sketch: null,          // base64 PNG from sketch canvas
     annotatedPhotos: [],   // [{ original, annotated, label }]
     measurements: [],      // [{ label, value, unit }] — manual dimension log
@@ -4024,6 +4074,7 @@ async function openJobDetail(jobId) {
 function renderJobDetail(job) {
   const q = job.quote || {};
   const total = calcJobTotal(job);
+  const isFactory = job.type === 'factory';
 
   let html = `
   <!-- JOB INFO -->
@@ -4033,7 +4084,7 @@ function renderJobDetail(job) {
       <div><div style="font-family:'Syne Mono',monospace;font-size:.58rem;letter-spacing:.15em;color:var(--md-gold-dk);margin-bottom:.3rem">REF</div>
         <div style="font-size:.85rem;color:var(--md-gold-lt);font-family:'Syne Mono',monospace">${job.ref || '-'}</div></div>
       <div><div style="font-family:'Syne Mono',monospace;font-size:.58rem;letter-spacing:.15em;color:var(--md-gold-dk);margin-bottom:.3rem">TYPE</div>
-        <div style="font-size:.85rem;color:var(--md-cream)">${job.type || '-'}</div></div>
+        <div style="font-size:.85rem;color:var(--md-cream)">${jobTypeLabel(job.type)}</div></div>
       <div><div style="font-family:'Syne Mono',monospace;font-size:.58rem;letter-spacing:.15em;color:var(--md-gold-dk);margin-bottom:.3rem">ADDRESS</div>
         <div style="font-size:.85rem;color:var(--md-cream)">${job.address || '-'}</div></div>
       <div><div style="font-family:'Syne Mono',monospace;font-size:.58rem;letter-spacing:.15em;color:var(--md-gold-dk);margin-bottom:.3rem">VISIT DATE</div>
@@ -4048,6 +4099,11 @@ function renderJobDetail(job) {
 
   <div class="ornament-divider"></div>
 
+  ${isFactory ? `
+  <!-- FACTORY: details + plain photos (no sketch / measurements / annotation) -->
+  ${factoryDetailsHtml(job)}
+  ${factoryPhotosHtml(job)}
+  ` : `
   <!-- MEASUREMENTS -->
   <div class="section-eyebrow">Dimensions & Measurements</div>
   <div id="job-measurements" style="margin-bottom:.75rem">
@@ -4076,7 +4132,7 @@ function renderJobDetail(job) {
         <button onclick="deleteJobPhoto(${i})" style="position:absolute;top:2px;right:2px;background:rgba(201,76,76,.9);border:none;border-radius:3px;color:#fff;font-size:.65rem;padding:.15rem .35rem;cursor:pointer;line-height:1">✕</button>
       </div>`).join('')}
     <div class="photo-placeholder" onclick="triggerJobPhoto()">📷</div>
-  </div>
+  </div>`}
 
   <div class="ornament-divider"></div>
 
@@ -4085,16 +4141,16 @@ function renderJobDetail(job) {
 
   <div class="quote-section">
     <div class="quote-section-title">Scope / Description</div>
-    <textarea class="form-input" rows="3" placeholder="Describe the work — fencing type, material spec, area to cover..."
+    <textarea class="form-input" rows="3" placeholder="${isFactory ? 'Describe the work - what is being fabricated, repaired or installed, materials and spec...' : 'Describe the work — fencing type, material spec, area to cover...'}"
       style="font-size:.82rem;resize:none"
       onchange="updateJobQuoteField('scope',this.value)" oninput="updateJobQuoteField('scope',this.value)">${q.scope||''}</textarea>
   </div>
 
   <div class="quote-section">
-    <div class="quote-section-title">Callout / Site Visit Fee</div>
+    <div class="quote-section-title">${isFactory ? 'Travel / Call-out (optional)' : 'Callout / Site Visit Fee'}</div>
     <div class="line-item">
-      <input class="line-desc" type="text" value="Site visit — ${job.address||'-'}" readonly style="opacity:.7"/>
-      <input class="line-amount" type="number" inputmode="decimal" id="jq-callout" value="${parseFloat(q.callout)||50}"
+      <input class="line-desc" type="text" value="${isFactory ? 'Travel / call-out to site' : 'Site visit — ' + (job.address||'-')}" readonly style="opacity:.7"/>
+      <input class="line-amount" type="number" inputmode="decimal" id="jq-callout" value="${isFactory ? (parseFloat(q.callout)||0) : (parseFloat(q.callout)||50)}"
         onchange="updateJobCallout(this.value)" oninput="updateJobCallout(this.value)"/>
     </div>
   </div>
@@ -4127,7 +4183,7 @@ function renderJobDetail(job) {
   <div class="quote-totals" id="jobQuoteTotals"></div>
 
   <div class="quote-section">
-    <div class="quote-section-title">Deposit Required</div>
+    <div class="quote-section-title">${isFactory ? 'Deposit (optional)' : 'Deposit Required'}</div>
     <div class="line-item">
       <input class="line-desc" type="text" placeholder="e.g. 50% deposit to confirm" value="${q.deposit||''}"
         onchange="updateJobQuoteField('deposit',this.value)" oninput="updateJobQuoteField('deposit',this.value)"/>
@@ -4176,6 +4232,53 @@ function renderJobDetail(job) {
   updateJobQuoteTotals();
 }
 
+// ── FACTORY / MECHANICAL JOBS ─────────────────────────────────────────────
+function fEsc(s) {
+  return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function updateJobFactoryField(field, val) {
+  if (!currentJob) return;
+  if (!currentJob.factory) currentJob.factory = {};
+  currentJob.factory[field] = val;
+  autosaveJob();
+}
+
+function factoryDetailsHtml(job) {
+  const f = job.factory || {};
+  const field = (label, key, ph) => `
+    <div class="quote-section">
+      <div class="quote-section-title">${label}</div>
+      <input class="form-input" type="text" placeholder="${fEsc(ph)}" value="${fEsc(f[key])}" autocomplete="off"
+        oninput="updateJobFactoryField('${key}',this.value)" onchange="updateJobFactoryField('${key}',this.value)"/>
+    </div>`;
+  return `
+  <div class="section-eyebrow">Factory Details</div>
+  ${field('Company', 'company', 'e.g. Illovo Sugar - Eston Mill')}
+  ${field('Contact Person', 'contact', 'Who asked for the quote')}
+  ${field('PO Number', 'po', 'Add when the purchase order arrives')}
+  ${field('Lead Time', 'leadTime', 'e.g. 2-3 weeks from receipt of PO')}
+  <div class="quote-section">
+    <div class="quote-section-title">Exclusions / Assumptions</div>
+    <textarea class="form-input" rows="3" placeholder="e.g. Excludes crane hire and scaffolding. Client to arrange isolation permit and site access."
+      style="font-size:.82rem;resize:none"
+      oninput="updateJobFactoryField('exclusions',this.value)" onchange="updateJobFactoryField('exclusions',this.value)">${fEsc(f.exclusions)}</textarea>
+  </div>`;
+}
+
+function factoryPhotosHtml(job) {
+  return `
+  <div class="ornament-divider"></div>
+  <div class="section-eyebrow">Photos</div>
+  <div class="photo-grid" id="jobPhotoGrid">${factoryPhotoThumbsHtml(job)}</div>
+  <div style="display:flex;gap:.6rem;margin-top:.75rem">
+    <button type="button" class="btn-secondary" style="flex:1" onclick="openPhotoPicker(true)">📷 Take photo</button>
+    <button type="button" class="btn-secondary" style="flex:1" onclick="openPhotoPicker(false)">🖼️ From gallery</button>
+  </div>
+  <div style="font-size:.72rem;color:var(--md-muted);margin-top:.4rem">Tap a photo to view it. The first 8 photos are printed on the quote PDF.</div>
+  <div class="ornament-divider"></div>`;
+}
+
 function measurementRowHTML(i, m = {}) {
   return `<div class="line-item" id="mrow-${i}">
     <input class="line-desc" type="text" placeholder="e.g. Fence length" value="${m.label||''}"
@@ -4216,9 +4319,10 @@ function removeMeasurement(i) {
 }
 
 function jobLineHTML(i, l = {}) {
-  const units = ['each','m','m²','m³','hrs','days','kg','bags','rolls','sheets','panels','posts','lm','set'];
+  const units = ['each','m','m²','m³','hrs','days','kg','bags','rolls','sheets','panels','posts','lm','set','lot'];
+  const ph = currentJob?.type === 'factory' ? 'e.g. Fabricate bracket, 6mm mild steel' : 'e.g. 90×38 pine rafter, 3.6m';
   return `<div class="line-item" id="jl-${i}" style="flex-wrap:wrap;gap:.4rem">
-    <input class="line-desc" type="text" placeholder="e.g. 90×38 pine rafter, 3.6m" value="${l.description||''}" style="flex:2;min-width:120px"
+    <input class="line-desc" type="text" placeholder="${ph}" value="${l.description||''}" style="flex:2;min-width:120px"
       onchange="updateJobLine(${i},'description',this.value)" oninput="updateJobLine(${i},'description',this.value)"/>
     <input type="number" inputmode="decimal" placeholder="Qty" value="${l.qty||''}" style="width:56px;background:var(--md-panel);border:1px solid var(--md-border);border-radius:var(--md-radius);color:var(--md-cream);font-size:.82rem;padding:.55rem .5rem;-webkit-appearance:none"
       onchange="updateJobLine(${i},'qty',this.value)" oninput="updateJobLine(${i},'qty',this.value)"/>
@@ -4413,10 +4517,59 @@ function sendJobWhatsApp() {
 // ── JOB PHOTO HANDLING ──
 let jobPhotoAnnotateIdx = null;
 
+// The shared hidden photo input. With capture="environment" phones open the camera only;
+// without it they offer camera AND gallery (and allow picking several photos at once).
+function setPhotoCapture(useCamera) {
+  const inp = document.getElementById('photo-capture');
+  if (useCamera) inp.setAttribute('capture', 'environment');
+  else inp.removeAttribute('capture');
+}
+
 function triggerJobPhoto() {
   if (!currentJob) return;
   jobPhotoAnnotateIdx = null;
+  photoTargetKey = null;
+  setPhotoCapture(true);
   document.getElementById('photo-capture').click();
+}
+
+// Factory jobs: two plain buttons, "Take photo" (camera) and "From gallery"
+function openPhotoPicker(useCamera) {
+  if (!currentJob) return;
+  jobPhotoAnnotateIdx = null;
+  photoTargetKey = null;
+  crmPhotoTarget = null;
+  setPhotoCapture(useCamera);
+  document.getElementById('photo-capture').click();
+}
+
+function factoryPhotoThumbsHtml(job) {
+  const photos = job.annotatedPhotos || [];
+  if (!photos.length) {
+    return `<div style="grid-column:1/-1;color:var(--md-muted);font-size:.82rem;padding:.5rem 0">No photos yet</div>`;
+  }
+  return photos.map((p, i) => `
+    <div style="position:relative">
+      <img class="photo-thumb" src="${p.annotated || p.original}" onclick="viewPhoto(this.src)"/>
+      <button type="button" aria-label="Remove photo" onclick="confirmDeleteJobPhoto(${i})"
+        style="position:absolute;top:4px;right:4px;width:34px;height:34px;background:rgba(201,76,76,.92);border:none;border-radius:50%;color:#fff;font-size:.95rem;cursor:pointer;line-height:1;-webkit-tap-highlight-color:transparent">✕</button>
+    </div>`).join('');
+}
+
+function refreshJobPhotoGrid() {
+  const grid = document.getElementById('jobPhotoGrid');
+  if (grid && currentJob) grid.innerHTML = factoryPhotoThumbsHtml(currentJob);
+}
+
+function confirmDeleteJobPhoto(idx) {
+  document.getElementById('confirmTitle').textContent = 'Remove photo';
+  document.getElementById('confirmMsg').textContent = 'Remove this photo from the job?';
+  document.getElementById('confirmBtn').style.display = '';
+  document.getElementById('confirmBtn').onclick = async () => {
+    closeModal('confirmModal');
+    await deleteJobPhoto(idx);
+  };
+  openModal('confirmModal');
 }
 
 function editAnnotation(idx) {
@@ -4432,18 +4585,29 @@ document.getElementById('photo-capture').addEventListener('change', async functi
   const files = Array.from(e.target.files);
   if (!files.length) return;
 
+  let added = 0;
   for (const file of files) {
     const compressed = await compressImage(file, 1200, 0.82);
+    if (!compressed) continue;
     if (!currentJob.annotatedPhotos) currentJob.annotatedPhotos = [];
     currentJob.annotatedPhotos.push({ original: compressed, annotated: compressed, label: '' });
+    added++;
   }
+  this.value = '';
+  if (!added) { showToast('Could not read that photo', 'error'); return; }
   currentJob.updated_at = Date.now();
   await dbPutJob(currentJob);
 
-  // Open annotation screen for last photo
+  // Factory jobs: just add to the grid - no annotation screen
+  if (currentJob.type === 'factory') {
+    refreshJobPhotoGrid();
+    showToast(`${added} photo${added > 1 ? 's' : ''} added`, 'success');
+    return;
+  }
+
+  // Other jobs: open annotation screen for last photo
   const lastIdx = currentJob.annotatedPhotos.length - 1;
   openAnnotateScreen(currentJob.annotatedPhotos[lastIdx].original, lastIdx);
-  this.value = '';
 });
 
 // ── SKETCH MODULE ──────────────────────────────────────────────────────────────
@@ -4909,6 +5073,9 @@ async function generateJobPDF(isInvoice) {
   const total    = subtotal - discAmt;
   const settingsRec = await dbGet('settings', 'company');
   const co = settingsRec ? settingsRec.value : {};
+  const isFactory = job.type === 'factory';
+  const fac = job.factory || {};
+  const billTo = (isFactory && fac.company) ? fac.company : client.name;   // name shown on strip, reference and file name
 
   try {
 
@@ -4926,7 +5093,7 @@ async function generateJobPDF(isInvoice) {
       doc.setFillColor(...hex('#0a0906')); doc.rect(0,0,W,12,'F');
       doc.setTextColor(...hex('#7a5815')); doc.setFontSize(7); doc.setFont('helvetica','normal');
       doc.text(`ELYSIUM WORKS - ${isInvoice?'INVOICE':'QUOTE'} ${job.ref||''}`, M, 8);
-      doc.text(client.name||'Client', W-M, 8, {align:'right'});
+      doc.text(pdfSafe(billTo||'Client'), W-M, 8, {align:'right'});
     }
   }
 
@@ -4938,7 +5105,7 @@ async function generateJobPDF(isInvoice) {
   doc.setTextColor(...hex('#e8c87a')); doc.setFontSize(20); doc.setFont('helvetica','bold');
   doc.text(isInvoice ? 'INVOICE' : 'QUOTATION', M, 26);
   doc.setTextColor(...hex('#7a5815')); doc.setFontSize(7.5); doc.setFont('helvetica','normal');
-  doc.text('KZN SOUTH COAST - SOUTH AFRICA', M, 34);
+  doc.text(isFactory ? 'INDUSTRIAL & MECHANICAL SERVICES - KZN SOUTH COAST' : 'KZN SOUTH COAST - SOUTH AFRICA', M, 34);
 
   const docDate = new Date().toLocaleDateString('en-ZA',{day:'numeric',month:'long',year:'numeric'});
   doc.setTextColor(...hex('#c9943c')); doc.setFontSize(9); doc.setFont('helvetica','normal');
@@ -4951,19 +5118,50 @@ async function generateJobPDF(isInvoice) {
   y = 65;
 
   // CLIENT BOX
-  doc.setFillColor(...hex('#1a1610')); doc.roundedRect(M,y,CW,38,3,3,'F');
-  doc.setDrawColor(...hex('#3d3526')); doc.roundedRect(M,y,CW,38,3,3,'S');
   const halfCW = CW/2;
-  doc.setTextColor(...hex('#7a5815')); doc.setFontSize(6.5); doc.setFont('helvetica','normal');
-  doc.text('CLIENT', M+6, y+9); doc.text('PHONE', M+halfCW, y+9);
-  doc.setTextColor(...hex('#f0e6ce')); doc.setFontSize(10); doc.setFont('helvetica','bold');
-  doc.text(pdfSafe(client.name||'-'), M+6, y+17); doc.text(pdfSafe(client.phone||'-'), M+halfCW, y+17);
-  doc.setTextColor(...hex('#7a5815')); doc.setFontSize(6.5); doc.setFont('helvetica','normal');
-  doc.text('SITE ADDRESS', M+6, y+25); doc.text('JOB TYPE', M+halfCW, y+25);
-  doc.setTextColor(...hex('#f0e6ce')); doc.setFontSize(9); doc.setFont('helvetica','bold');
-  doc.text(pdfSafe(job.address||'-'), M+6, y+33);
-  doc.text(pdfSafe(job.type||'-'), M+halfCW, y+33);
-  y += 46;
+  // shorten text with "..." so a long company name or address can't run out of the box
+  const fit = (txt, maxW) => {
+    let s = pdfSafe(txt);
+    if (!s) return '-';
+    if (doc.getTextWidth(s) <= maxW) return s;
+    while (s.length > 1 && doc.getTextWidth(s + '...') > maxW) s = s.slice(0,-1);
+    return s + '...';
+  };
+  if (isFactory) {
+    // Factory layout: company, PO and lead time up front
+    const bh = 50;
+    doc.setFillColor(...hex('#1a1610')); doc.roundedRect(M,y,CW,bh,3,3,'F');
+    doc.setDrawColor(...hex('#3d3526')); doc.roundedRect(M,y,CW,bh,3,3,'S');
+    const rows = [
+      [['COMPANY', fac.company || client.name],   ['PHONE', client.phone]],
+      [['ATTENTION', fac.contact || client.name], ['PO NUMBER', fac.po || 'To be issued']],
+      [['SITE / PLANT', job.address],             ['LEAD TIME', fac.leadTime]],
+    ];
+    rows.forEach((row, r) => {
+      const ly = y + 9 + r*14;
+      row.forEach(([label, val], c) => {
+        const x = M + 6 + c*halfCW;
+        doc.setTextColor(...hex('#7a5815')); doc.setFontSize(6.5); doc.setFont('helvetica','normal');
+        doc.text(label, x, ly);
+        doc.setTextColor(...hex('#f0e6ce')); doc.setFontSize(9.5); doc.setFont('helvetica','bold');
+        doc.text(fit(val, halfCW-12), x, ly+6.5);
+      });
+    });
+    y += bh + 8;
+  } else {
+    doc.setFillColor(...hex('#1a1610')); doc.roundedRect(M,y,CW,38,3,3,'F');
+    doc.setDrawColor(...hex('#3d3526')); doc.roundedRect(M,y,CW,38,3,3,'S');
+    doc.setTextColor(...hex('#7a5815')); doc.setFontSize(6.5); doc.setFont('helvetica','normal');
+    doc.text('CLIENT', M+6, y+9); doc.text('PHONE', M+halfCW, y+9);
+    doc.setTextColor(...hex('#f0e6ce')); doc.setFontSize(10); doc.setFont('helvetica','bold');
+    doc.text(pdfSafe(client.name||'-'), M+6, y+17); doc.text(pdfSafe(client.phone||'-'), M+halfCW, y+17);
+    doc.setTextColor(...hex('#7a5815')); doc.setFontSize(6.5); doc.setFont('helvetica','normal');
+    doc.text('SITE ADDRESS', M+6, y+25); doc.text('JOB TYPE', M+halfCW, y+25);
+    doc.setTextColor(...hex('#f0e6ce')); doc.setFontSize(9); doc.setFont('helvetica','bold');
+    doc.text(pdfSafe(job.address||'-'), M+6, y+33);
+    doc.text(pdfSafe(jobTypeLabel(job.type)), M+halfCW, y+33);
+    y += 46;
+  }
 
   // SCOPE
   if (q.scope?.trim()) {
@@ -5014,7 +5212,7 @@ async function generateJobPDF(isInvoice) {
   }
 
   // ANNOTATED PHOTOS (first 4)
-  const photosToEmbed = (job.annotatedPhotos||[]).slice(0,4);
+  const photosToEmbed = (job.annotatedPhotos||[]).slice(0, isFactory ? 8 : 4);
   if (photosToEmbed.length) {
     checkPg(50);
     doc.setFillColor(...hex('#111108')); doc.rect(M,y,CW,8,'F');
@@ -5070,7 +5268,11 @@ async function generateJobPDF(isInvoice) {
     y+=3;
   };
 
-  addSection('CALLOUT / SITE VISIT FEE', [{description:`Site visit - ${client.area||'local'}`, qty:1, unit:'each', unit_price:callout}]);
+  if (isFactory) {
+    if (callout > 0) addSection('TRAVEL / CALL-OUT', [{description:'Travel / call-out to site', qty:1, unit:'each', unit_price:callout}]);
+  } else {
+    addSection('CALLOUT / SITE VISIT FEE', [{description:`Site visit - ${client.area||'local'}`, qty:1, unit:'each', unit_price:callout}]);
+  }
   addSection('LINE ITEMS', lines);
 
   // TOTALS BOX
@@ -5100,6 +5302,21 @@ async function generateJobPDF(isInvoice) {
   doc.text('VAT not registered - no VAT charged', M+6, ty2+6);
   y+=totH+8;
 
+  // EXCLUSIONS / ASSUMPTIONS (factory jobs)
+  if (isFactory && fac.exclusions?.trim()) {
+    const exLines = doc.splitTextToSize(pdfSafe(fac.exclusions.trim()), CW-8);
+    checkPg(exLines.length*5.5 + 24);
+    doc.setFillColor(...hex('#111108')); doc.rect(M,y,CW,8,'F');
+    doc.setDrawColor(...hex('#3A6B4F')); doc.rect(M,y,3,8,'F');
+    doc.setTextColor(...hex('#sectxt')); doc.setFontSize(7.5); doc.setFont('helvetica','bold');
+    doc.text('EXCLUSIONS / ASSUMPTIONS', M+6, y+5.5); y+=10;
+    const exH = exLines.length*5.5+6;
+    doc.setFillColor(...hex('#bodybg')); doc.rect(M,y,CW,exH,'F');
+    doc.setDrawColor(...hex('#bodyline')); doc.rect(M,y,CW,exH,'S');
+    doc.setTextColor(...hex('#bodytxt')); doc.setFontSize(8.5); doc.setFont('helvetica','normal');
+    doc.text(exLines, M+4, y+5.5); y+=exH+6;
+  }
+
   // PAYMENT TERMS
   const hasDeposit = q.deposit?.trim(), hasTerms = q.terms?.trim();
   if (hasDeposit || hasTerms || !isInvoice) {
@@ -5111,7 +5328,9 @@ async function generateJobPDF(isInvoice) {
     let termsArr=[];
     if (hasDeposit) termsArr.push(`Deposit: ${pdfSafe(q.deposit.trim())}`);
     if (hasTerms) termsArr.push(pdfSafe(q.terms.trim()));
-    if (!termsArr.length && !isInvoice) termsArr=['This quotation is valid for 30 days.','A deposit is required to confirm the booking.'];
+    if (!termsArr.length && !isInvoice) termsArr = isFactory
+      ? ['This quotation is valid for 30 days.','Payment within 30 days of invoice date.']
+      : ['This quotation is valid for 30 days.','A deposit is required to confirm the booking.'];
     if (q.validUntil) termsArr.push(`Valid until: ${new Date(q.validUntil).toLocaleDateString('en-ZA')}`);
     const tLines = doc.splitTextToSize(pdfSafe(termsArr.join('\n')), CW-8);
     const tH = tLines.length*5+6;
@@ -5139,7 +5358,7 @@ async function generateJobPDF(isInvoice) {
     by+=6.5;
   });
   doc.setTextColor(...hex('#4caf7a')); doc.setFontSize(6.5); doc.setFont('helvetica','italic');
-  doc.text(`Reference: "${pdfSafe(client.name)} - ${job.ref||''}"`, colA, by);
+  doc.text(`Reference: "${isFactory && fac.po ? 'PO ' + pdfSafe(fac.po) : pdfSafe(billTo)} - ${job.ref||''}"`, colA, by);
   y+=36;
 
   // FOOTER
@@ -5154,7 +5373,7 @@ async function generateJobPDF(isInvoice) {
 
   try {
     const docType = isInvoice ? 'Invoice' : 'Quote';
-    const fname = `EW_${docType}_${pdfSafe(client.name).replace(/\s+/g,'_')}_${job.ref||'job'}.pdf`;
+    const fname = `EW_${docType}_${pdfSafe(billTo).replace(/[^A-Za-z0-9]+/g,'_')}_${job.ref||'job'}.pdf`;
     doc.save(fname);
     showToast(`${docType} PDF generated`, 'success');
     if (!isInvoice && currentJob.status === 'enquiry') await setJobStatus('quoted');
@@ -5822,6 +6041,8 @@ async function deleteJobPhoto(idx) {
 // ── CRM PHOTOS ──
 function triggerCRMPhoto() {
   crmPhotoTarget = true;
+  photoTargetKey = null;
+  setPhotoCapture(true);
   document.getElementById('photo-capture').click();
 }
 
@@ -5864,7 +6085,7 @@ document.getElementById('photo-capture').addEventListener('change', async functi
   if (!currentClient.photos) currentClient.photos = [];
   for (const file of files) {
     const compressed = await compressImage(file, 800, 0.75);
-    currentClient.photos.push(compressed);
+    if (compressed) currentClient.photos.push(compressed);
   }
   currentClient.updated_at = Date.now();
   await dbPutClient(currentClient);
@@ -5932,6 +6153,9 @@ async function migrateOldQuotesToJobs() {
 
     // ── PATCH: fix status/type on existing jobs ──
     for (const job of cleanJobs) {
+      // Only jobs created by this migration (mig_ ids) are corrected from the client record.
+      // Jobs made with "New Job" (e.g. factory jobs) keep the type and status the user set.
+      if (!String(job.id).startsWith('mig_')) continue;
       const client = clients.find(c => c.id === job.client_id);
       if (!client) continue;
       let changed = false;
